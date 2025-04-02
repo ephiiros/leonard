@@ -1,6 +1,7 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { config } from "../config";
 import PocketBase from "pocketbase";
+import { activeTimers } from "../libs/activeTimers";
 const pb = new PocketBase(config.DB_IP);
 
 export const data = new SlashCommandBuilder()
@@ -17,5 +18,7 @@ export async function execute(interaction: CommandInteraction) {
   console.log(record)
   return interaction.reply(`Server ID: ${interaction.guildId}
 Channel ID: ${record.channelID}
-Leagues: ${record.leagues}`);
+Leagues: ${record.leagues}
+Timers: ${activeTimers.length}`
+);
 }

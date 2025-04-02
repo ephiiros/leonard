@@ -6,6 +6,7 @@ const baseUrl: string = "https://lol.fandom.com/api.php?";
 export async function getFutureLeagueGames(league: string) {
   let leagueQuery = ` AND (MatchId LIKE '${league}/%'` + ")";
   const now = DateTime.now();
+  const twentyDays = now.plus({ days: 20 })
   const params = new URLSearchParams({
     action: "cargoquery",
     format: "json",
@@ -14,7 +15,9 @@ export async function getFutureLeagueGames(league: string) {
     tables: "MatchSchedule",
     fields: "MatchId,DateTime_UTC,Team1,Team2,BestOf",
     where:
-      `DateTime_UTC > '${now.toFormat("yyyy-MM-dd HH:mm:ss")}'` +
+      `DateTime_UTC ` + 
+      `BETWEEN '${now.toFormat("yyyy-MM-dd HH:mm:ss")}' ` +
+      `AND '${twentyDays.toFormat("yyyy-MM-dd HH:mm:ss")}' ` + 
       leagueQuery,
     order_by: "DateTime_UTC ASC",
   });

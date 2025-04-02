@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import { ChannelType, Client } from "discord.js";
 import { config } from "./config";
 import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
@@ -12,55 +12,118 @@ const client = new Client({
 
 client.once("ready", async () => {
   console.log(`[${DateTime.utc()}] Ready`);
-  await pb
-    .collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+  pb.collection("_superusers")
+    .authWithPassword(config.DB_USER, config.DB_PASSWORD)
+    .then(async () => {
+      console.log(`[${DateTime.utc()}] Pocketbase auth success`);
 
-  const serverObjects = await client.guilds.fetch();
-  const botServerList: Set<string> = new Set(
-    serverObjects.map((server) => server.id)
-  );
-  const pbServerList = new Set(
-    (await pb.collection("servers").getFullList()).map(
-      (record) => record.discordServerID
-    )
-  );
-  const newServers = botServerList.difference(pbServerList);
-  serverObjects.forEach((serverObject) => {
-    console.log(serverObject);
-  });
-  console.log(botServerList);
-  botServerList.forEach(async (serverID) => {
-    console.log("deploying commands to ", serverID)
-    await deployCommands({ guildId: serverID });
+      const serverPromise = pb
+        .collection("servers")
+        .getList(1, 1)
+        .then()
+        .catch(async () => {
+          console.log(`[${DateTime.utc()}] "servers" collection missing`);
+          console.log(`[${DateTime.utc()}] creating "servers" collection`);
+          await pb.collections.create({
+            name: "servers",
+            type: "base",
+            fields: [
+              { name: "discordServerID", type: "text" },
+              { name: "channelID", type: "text" },
+              { name: "messageIDList", type: "json" },
+              { name: "leagues", type: "json" },
+            ],
+          });
+          console.log(`[${DateTime.utc()}] "servers" collection created`);
+        });
 
-    if (false) {
+      const usersPromise = pb
+        .collection("users")
+        .getList(1, 1)
+        .then()
+        .catch(async () => {
+          console.log(`[${DateTime.utc()}] "users" collection missing`);
+          console.log(`[${DateTime.utc()}] creating "users" collection`);
+          await pb.collections.create({
+            name: "users",
+            type: "base",
+            fields: [
+              { name: "discordUserID", type: "text" },
+              { name: "username", type: "text" },
+            ],
+          });
+          console.log(`[${DateTime.utc()}] "users" collection created`);
+        });
 
-    const record2 = await pb
-      .collections.create({
-        name: serverID,
-        type: "base",
-        fields: [
-          {name: "MatchId", type: "text"},
-          {name: "DateTime_UTC", type: "text"},
-          {name: "Team1", type: "text"},
-          {name: "Team2", type: "text"},
-          {name: "BestOf", type: "text"}
-        ]
-      })
-      console.log("bah")
-    console.log(record2)
-    }
+      Promise.all([serverPromise, usersPromise]).then(async () => {
+        console.log(`[${DateTime.utc()}] All database checks complete`);
 
-  })
-  console.log(pbServerList);
-  console.log(newServers);
-  if (newServers.size === 0) {
-    console.log(`[${DateTime.utc()}] No unaccounted servers`);
-  }
-  newServers.forEach(async (serverID) => {
-    console.log("adding new server ", serverID);
-  });
+        console.log(`[${DateTime.utc()}] Comparing server lists`);
+        // All servers that the discord client is in
+        const botServerSet: Set<string> = new Set(
+          (await client.guilds.fetch()).map((server) => server.id)
+        );
+
+        // All servers in pocketbase
+        const pbServetSet: Set<string> = new Set(
+          (await pb.collection("servers").getFullList()).map(
+            (record) => record.discordServerID
+          )
+        );
+
+        // Fix the difference if there is any
+        const newServers = botServerSet.difference(pbServetSet);
+        if (newServers.size === 0) {
+          console.log(`[${DateTime.utc()}] No unaccounted servers`);
+        } else {
+          const serverBatch = pb.createBatch();
+          newServers.forEach((serverID) => {
+            console.log(`[${DateTime.utc()}] UNNACOUNTED SERVER ${serverID}`);
+            // TODO: add server to pocketbase with batch
+            serverBatch.collection("servers").create({
+              discordServerID: serverID,
+              channelID: "null",
+              messageIDList: [],
+              leagues: [],
+            });
+          });
+          serverBatch.send();
+        }
+        // deploy commands + channel setting
+        botServerSet.forEach(async (serverID) => {
+          await deployCommands({ guildId: serverID });
+          const serverData = await pb
+            .collection("servers")
+            .getFirstListItem(`discordServerID='${serverID}'`);
+          if (serverData.channelID === "null") {
+            console.log("CHANNEL NULL SEND MESSAGE ");
+            const guild = await client.guilds.fetch(serverID);
+            const me = guild.members.me
+            console.log(me)
+            if (me) {
+              const channel = guild.channels.cache.find(
+                (channel) => {
+                  channel.permissionsFor(me).has("SendMessages")
+                }
+              );
+              console.log(channel)
+              if (channel) {
+                if (channel.isSendable()) {
+                  channel.send(" asdf finally")
+                }
+              }
+
+            }
+          }
+        });
+      });
+    })
+    .catch((error) => {
+      console.log(`[${DateTime.utc()}] ERROR`);
+      console.log(error);
+      console.log(`[${DateTime.utc()}] Bot won't function without pocketbase`);
+      client.destroy();
+    });
 });
 
 client.on("guildCreate", async (guild) => {
