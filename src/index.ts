@@ -98,22 +98,37 @@ client.once("ready", async () => {
           if (serverData.channelID === "null") {
             console.log("CHANNEL NULL SEND MESSAGE ");
             const guild = await client.guilds.fetch(serverID);
-            const me = guild.members.me
-            console.log(me)
+            const me = guild.members.me;
             if (me) {
-              const channel = guild.channels.cache.find(
-                (channel) => {
-                  channel.permissionsFor(me).has("SendMessages")
+              const channel = guild.channels.cache.find((channel) => {
+                if (
+                  channel.type === ChannelType.GuildText &&
+                  channel.isSendable()
+                ) {
+                  return channel;
                 }
-              );
-              console.log(channel)
-              if (channel) {
-                if (channel.isSendable()) {
-                  channel.send(" asdf finally")
-                }
+              });
+              console.log(guild.channels.cache);
+              console.log("channel", channel);
+              if (channel?.isSendable()) {
+                channel.send("Pick a channel for the bot using /setchannel");
               }
-
             }
+          } else {
+            // channel setup complete, send restart message
+            const guild = await client.guilds.fetch(serverID);
+            const channel = guild.channels.cache.find(
+              (channel) => channel.id === serverData.channelID
+            );
+            if (channel) {
+              if (channel.isSendable()) {
+                channel.send(
+                  "bot restarted, channel id exists poggers, send info here"
+                );
+              }
+            }
+            // TODO: setup cache reset 
+            // TODO: cron job for cache reset
           }
         });
       });

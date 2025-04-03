@@ -5,7 +5,7 @@ export type gameData = {
     team2: string,
 }
 
-export async function sendGameMessage(client: Client, channel: TextChannel, gameData: gameData) {
+export async function sendGameMessage(channel: TextChannel, gameData: gameData) {
     channel.send("HELLO")
     channel.send({
         poll: {

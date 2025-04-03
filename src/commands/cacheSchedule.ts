@@ -1,10 +1,7 @@
 import {
-  ActionRowBuilder,
   ChannelType,
   CommandInteraction,
   SlashCommandBuilder,
-  Team,
-  TextChannel,
 } from "discord.js";
 import { getFutureLeagueGames } from "../libs/lolFandom";
 import { config } from "../config";
@@ -19,61 +16,70 @@ export const data = new SlashCommandBuilder()
   .setDescription("refreshes all games scheduled on lol fandom");
 
 export async function execute(interaction: CommandInteraction) {
-  if (interaction.guildId === null) { 
-    return interaction.reply("interaction.guildId is null")
+  if (interaction.guildId === null) {
+    return interaction.reply("interaction.guildId is null");
   }
-  const guildId = interaction.guildId
 
+  const guildId = interaction.guildId;
   await pb
     .collection("_superusers")
     .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+  const serverData = await pb
+    .collection("servers")
+    .getFirstListItem(`discordServerID='${interaction.guildId}'`);
 
-  const idResult = await pb.collection(guildId).getFullList({
-    fields: "id"
-  });
-  const idList = idResult.map((item) => {
-    return item.id
-  })
-  console.log(idList.length)
+  // Clear pocketbase cache
+  const idTimersResult = await pb
+    .collection(`${guildId}ActiveTimers`)
+    .getFullList({
+      fields: "id",
+    });
+  const idTimersList = idTimersResult.map((item) => item.id);
+  if (idTimersList.length > 0) {
+    const deleteBatch = pb.createBatch();
+    idTimersList.forEach((item) => {
+      deleteBatch.collection(`${guildId}ActiveTimers`).delete(item);
+    });
+    deleteBatch.send();
+  }
 
-  console.log("BEFORE CLEARED ARRAY", activeTimers);
+  // Clear local timers
   activeTimers.forEach((timer) => {
     clearTimeout(timer);
   });
   activeTimers.length = 0;
-  console.log("CLEARED ARRAY", activeTimers);
 
-  const batch = pb.createBatch();
+  // Cache games for each league
+  serverData.leagues.forEach(async (league: string) => {
+    const cacheBatch = pb.createBatch();
+    const lolFandomData = await getFutureLeagueGames(league);
+    const channelResult = await interaction.guild?.channels.fetch(serverData.channelID)
 
-  idList.forEach((item) => {
-      batch.collection(guildId).delete(item)
-  })
+    if (channelResult?.type === ChannelType.GuildText) {
+      lolFandomData.forEach((item) => {
+        cacheBatch.collection(`${guildId}ActiveTimers`).create({
+          MatchId: item.MatchId,
+          DateTime_UTC: item.DateTime_UTC.toISO(),
+          Team1: item.Team1,
+          Team2: item.Team2,
+          BestOf: item.BestOf,
+        });
+        const delayToGame = item.DateTime_UTC.diff(DateTime.utc()).toObject()
+          .milliseconds;
 
-  const lolFandomData = await getFutureLeagueGames("LEC");
-  const channelResult = await interaction.channel?.fetch();
-  console.log(lolFandomData.length)
-  if (channelResult?.type === ChannelType.GuildText) {
-    lolFandomData.forEach((item) => {
-      batch.collection(guildId).create({
-        MatchId: item.MatchId,
-        DateTime_UTC: item.DateTime_UTC.toISO(),
-        Team1: item.Team1,
-        Team2: item.Team2,
-        BestOf: item.BestOf,
+
+
+        // TODO: idk wtf
+        //const myNewTimer = setTimeout(sendGameMessage, delayToGame, channelResult);
+        const myNewTimer = setTimeout(console.log, delayToGame, channelResult)
+
+        activeTimers.push(myNewTimer);
       });
-      const now = DateTime.utc();
-      const delayToGame = item.DateTime_UTC.diff(now).toObject().milliseconds;
-      const myNewTimer = setTimeout(console.log, delayToGame, item.MatchId);
-      activeTimers.push(myNewTimer);
-      //sendGameMessage(interaction.client, channelResult, {
-        //team1: item.Team1,
-        //team2: item.Team2,
-      //});
-    });
-  }
-  console.log(activeTimers.length);
+    }
 
-  const result = await batch.send()
-  console.log(result)
+    const result = await cacheBatch.send();
+    console.log(result);
+  });
+  console.log(activeTimers.length);
   return interaction.reply("Finished!");
 }

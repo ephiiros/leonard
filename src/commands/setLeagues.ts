@@ -12,9 +12,11 @@ export const data = new SlashCommandBuilder()
       .setRequired(true));
 
 export async function execute(interaction: CommandInteraction) {
-
   const leagues = interaction.options.get('leagues', true)
-  console.log(leagues.value)
+  if (typeof(leagues.value) !== 'string') {
+    return interaction.reply("this should never happen")
+  }
+
   await pb
     .collection("_superusers")
     .authWithPassword(config.DB_USER, config.DB_PASSWORD);
@@ -23,5 +25,5 @@ export async function execute(interaction: CommandInteraction) {
     .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
   const record = await pb.collection('servers').update(fetchRecord.id, {"leagues": leagues.value})
   console.log(record)
-  return interaction.reply(record.leagues);
+  return interaction.reply(record.leagues.toString());
 }
