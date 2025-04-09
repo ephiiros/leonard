@@ -1,9 +1,11 @@
-import { ChannelType, Client } from "discord.js";
+import { ChannelType, Client, TextChannel } from "discord.js";
 import { config } from "./config";
 import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
 import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
+import { cacheScheduleLib } from "./libs/cache";
+import { CronJob } from 'cron';
 const pb = new PocketBase(config.DB_IP);
 
 const client = new Client({
@@ -127,8 +129,37 @@ client.once("ready", async () => {
                 );
               }
             }
-            // TODO: setup cache reset 
-            // TODO: cron job for cache reset
+            console.log(`[${DateTime.utc()}] Caching games`);
+            console.log(await cacheScheduleLib(guild))
+            const job = new CronJob(
+              '0 */1 * * * *',
+              async function () {
+                console.log(`[${DateTime.utc()}] Cron tick`);
+                console.log(await cacheScheduleLib(guild))
+                // check all active timers games 
+                const serverDataCron = await pb
+                  .collection("servers")
+                  .getFirstListItem(`discordServerID='${serverID}'`);
+                console.log(serverDataCron.messageIDList)
+                serverDataCron.messageIDList.forEach(async (element:any) => {
+                  if(channel?.isSendable()) {
+                    console.log((await channel.messages.fetch(element.messageID)).poll?.resultsFinalized)
+                    // if 
+                    //  yes (locked in game not necessarily ended)
+                    //    if lol.fandom results are out 
+                    //      yes add points + remove from active list
+                    //      no, do nothing 
+                    //  no (game not started yet)
+                    //    do nothing 
+
+                  }
+                  console.log(element)
+                });
+              }, // onTick
+              null, //onComplete
+              true, // start
+              'UTC'
+            )
           }
         });
       });
