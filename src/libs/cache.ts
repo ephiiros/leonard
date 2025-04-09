@@ -16,7 +16,7 @@ export async function cacheScheduleLib(guild: Guild) {
   const guildId = guild.id;
   await pb
     .collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+    .authWithPassword(config.DB_USER, config.DB_PASSWORD)
   const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID='${guildId}'`);
@@ -45,6 +45,8 @@ export async function cacheScheduleLib(guild: Guild) {
   // Cache games for each league
   serverData.leagues.forEach(async (league: string) => {
     const cacheBatch = pb.createBatch();
+    // this has a chance to return nothing if 
+    // league is wrong and then bot complains coz empty batch
     const lolFandomData = await getFutureLeagueGames(league);
     const channelResult = await guild.channels.fetch(serverData.channelID);
 
@@ -65,16 +67,17 @@ export async function cacheScheduleLib(guild: Guild) {
           isoGameData = "gg"
         }
 
-
-        const myNewTimer = setTimeout(() => {
-          sendGameMessage(channelResult, {
-            team1: item.Team1,
-            team2: item.Team2,
-            gameStart: isoGameData
-          });
-        }, delayToGame);
-
-        activeTimers.push(myNewTimer);
+        if (delayToGame !== undefined) {
+          const myNewTimer = setTimeout(() => {
+            sendGameMessage(channelResult, {
+              team1: item.Team1,
+              team2: item.Team2,
+              gameStart: isoGameData,
+              MatchId: item.MatchId
+            });
+          }, Math.max(0, delayToGame - parseInt(config.VOTE_OFFSET) * 3600000));
+          activeTimers.push(myNewTimer);
+        }
       });
     }
     const result = await cacheBatch.send();

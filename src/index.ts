@@ -6,6 +6,7 @@ import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
 import { cacheScheduleLib } from "./libs/cache";
 import { CronJob } from 'cron';
+import { getMatchResult } from "./libs/lolFandom";
 const pb = new PocketBase(config.DB_IP);
 
 const client = new Client({
@@ -140,15 +141,18 @@ client.once("ready", async () => {
                 const serverDataCron = await pb
                   .collection("servers")
                   .getFirstListItem(`discordServerID='${serverID}'`);
-                console.log(serverDataCron.messageIDList)
                 serverDataCron.messageIDList.forEach(async (element:any) => {
                   if(channel?.isSendable()) {
-                    console.log((await channel.messages.fetch(element.messageID)).poll?.resultsFinalized)
-                    // if 
-                    //  yes (locked in game not necessarily ended)
-                    //    if lol.fandom results are out 
-                    //      yes add points + remove from active list
-                    //      no, do nothing 
+                    const pollState = (await channel.messages.fetch(element.messageID)).poll?.resultsFinalized
+                    console.log("poll closed?", pollState)
+                    if (pollState === true) {
+                      //  yes (locked in game not necessarily ended)
+                      
+                      console.log("lol fandom match result", await getMatchResult(element.gameID))
+                      //    if lol.fandom results are out 
+                      //      yes add points + remove from active list
+                      //      no, do nothing 
+                    }
                     //  no (game not started yet)
                     //    do nothing 
 
