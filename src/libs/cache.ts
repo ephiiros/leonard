@@ -68,12 +68,14 @@ export async function cacheScheduleLib(guild: Guild) {
         }
 
         if (delayToGame !== undefined) {
+          console.log(Math.max(0, delayToGame - parseInt(config.VOTE_OFFSET) * 3600000))
           const myNewTimer = setTimeout(() => {
             sendGameMessage(channelResult, {
               team1: item.Team1,
               team2: item.Team2,
               gameStart: isoGameData,
-              MatchId: item.MatchId
+              MatchId: item.MatchId,
+              bestOf: item.BestOf
             });
           }, Math.max(0, delayToGame - parseInt(config.VOTE_OFFSET) * 3600000));
           activeTimers.push(myNewTimer);

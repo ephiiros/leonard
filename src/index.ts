@@ -5,8 +5,9 @@ import { deployCommands } from "./deploy-commands";
 import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
 import { cacheScheduleLib } from "./libs/cache";
-import { CronJob } from 'cron';
+import { CronJob } from "cron";
 import { getMatchResult } from "./libs/lolFandom";
+import { addPoints } from "./libs/serverLib";
 const pb = new PocketBase(config.DB_IP);
 
 const client = new Client({
@@ -23,7 +24,6 @@ client.once("ready", async () => {
       const serverPromise = pb
         .collection("servers")
         .getList(1, 1)
-        .then()
         .catch(async () => {
           console.log(`[${DateTime.utc()}] "servers" collection missing`);
           console.log(`[${DateTime.utc()}] creating "servers" collection`);
@@ -43,7 +43,6 @@ client.once("ready", async () => {
       const usersPromise = pb
         .collection("users")
         .getList(1, 1)
-        .then()
         .catch(async () => {
           console.log(`[${DateTime.utc()}] "users" collection missing`);
           console.log(`[${DateTime.utc()}] creating "users" collection`);
@@ -92,78 +91,81 @@ client.once("ready", async () => {
           });
           serverBatch.send();
         }
+
         // deploy commands + channel setting
         botServerSet.forEach(async (serverID) => {
           await deployCommands({ guildId: serverID });
+
+          const guild = await client.guilds.fetch(serverID);
+          const helloChannel = guild.channels.cache.find(
+            (channel) =>
+              channel.type === ChannelType.GuildText && channel.isSendable()
+          );
+          // not a single typable channel
+          if (helloChannel === undefined) return;
+
           const serverData = await pb
             .collection("servers")
             .getFirstListItem(`discordServerID='${serverID}'`);
+
           if (serverData.channelID === "null") {
-            console.log("CHANNEL NULL SEND MESSAGE ");
-            const guild = await client.guilds.fetch(serverID);
-            const me = guild.members.me;
-            if (me) {
-              const channel = guild.channels.cache.find((channel) => {
-                if (
-                  channel.type === ChannelType.GuildText &&
-                  channel.isSendable()
-                ) {
-                  return channel;
-                }
-              });
-              console.log(guild.channels.cache);
-              console.log("channel", channel);
-              if (channel?.isSendable()) {
-                channel.send("Pick a channel for the bot using /setchannel");
-              }
-            }
+            console.log(`[${DateTime.utc()}] [${serverID}] no channelID`);
+            helloChannel.send("Pick a channel for the bot using /setchannel");
           } else {
             // channel setup complete, send restart message
-            const guild = await client.guilds.fetch(serverID);
             const channel = guild.channels.cache.find(
               (channel) => channel.id === serverData.channelID
-            );
-            if (channel) {
-              if (channel.isSendable()) {
-                channel.send(
-                  "bot restarted, channel id exists poggers, send info here"
-                );
-              }
-            }
+            ) as TextChannel | undefined;
+
+            if (channel === undefined) return;
+
+            channel.send("bot restarted, channelID exists");
+
             console.log(`[${DateTime.utc()}] Caching games`);
-            console.log(await cacheScheduleLib(guild))
+            console.log(await cacheScheduleLib(guild));
+
             const job = new CronJob(
-              '0 */1 * * * *',
+              "0 */1 * * * *",
               async function () {
                 console.log(`[${DateTime.utc()}] Cron tick`);
-                console.log(await cacheScheduleLib(guild))
-                // check all active timers games 
+                console.log(await cacheScheduleLib(guild));
+                // check all active timers games
                 const serverDataCron = await pb
                   .collection("servers")
                   .getFirstListItem(`discordServerID='${serverID}'`);
-                serverDataCron.messageIDList.forEach(async (element:any) => {
-                  if(channel?.isSendable()) {
-                    const pollState = (await channel.messages.fetch(element.messageID)).poll?.resultsFinalized
-                    console.log("poll closed?", pollState)
-                    if (pollState === true) {
-                      //  yes (locked in game not necessarily ended)
-                      
-                      console.log("lol fandom match result", await getMatchResult(element.gameID))
-                      //    if lol.fandom results are out 
-                      //      yes add points + remove from active list
-                      //      no, do nothing 
-                    }
-                    //  no (game not started yet)
-                    //    do nothing 
 
-                  }
-                  console.log(element)
+                serverDataCron.messageIDList.forEach(async (element: any) => {
+                  const pollClosed = (
+                    await channel.messages.fetch(element.messageID)
+                  ).poll?.resultsFinalized;
+                  console.log("poll closed?", pollClosed);
+                  if (pollClosed === false) return;
+                  const pollData = (
+                    await channel.messages.fetch(element.messageID)
+                  ).poll;
+                  if (pollData === null) return;
+                  const lolFandomData = await getMatchResult(element.gameID);
+                  if (lolFandomData === null) return;
+                  console.log("lol fandom match result", lolFandomData);
+                  if (lolFandomData.Winner === null) return;
+
+                  addPoints(lolFandomData, pollData);
+                  // remove active message ?
+                  // removeActiveMessage(pollData)
+                  //console.log("regular", serverData.messageIDList);
+                  //const filteredData = serverData.messageIDList.filter(
+                  //(messageItem: any) =>
+                  //messageItem.gameID !== lolFandomData.MatchId
+                  //);
+                  //pb.collection("servers").update(serverData.id, {
+                  //messageIDList: filteredData,
+                  //});
                 });
               }, // onTick
               null, //onComplete
               true, // start
-              'UTC'
-            )
+              "UTC"
+            );
           }
         });
       });

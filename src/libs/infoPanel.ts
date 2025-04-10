@@ -25,8 +25,10 @@ export async function getInfoPanel(guild: Guild) {
       return Promise.all([nextGamePromise, serverPromise]).then(
         ([nextGame, serverData]) => {
           const nextTime =
-            DateTime.fromISO(nextGame["DateTime_UTC"]).toUTC().toMillis() /
+            DateTime.fromISO(nextGame["DateTime_UTC"], {zone: 'utc'}).toMillis() /
             1000;
+          console.log(nextGame)
+          console.log(nextTime)
           let activePolls = "\n "
           if (serverData.messageIDList.length > 0) {
             serverData.messageIDList.forEach((item: any) => {

@@ -3,7 +3,7 @@ import { config } from "../config";
 import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
 import { activeTimers } from "../libs/activeTimers";
-import { getInfoPanel } from "./infoPanel";
+import { getInfoPanel } from "../libs/infoPanel";
 const pb = new PocketBase(config.DB_IP);
 
 export const data = new SlashCommandBuilder()
