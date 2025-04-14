@@ -23,7 +23,7 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
     });
   const activePolls = serverData.messageIDList.map((item: any) => item.gameID);
   if (activePolls.includes(gameData.MatchId)) return;
-  const gameTime = DateTime.fromISO(gameData.gameStart);
+  const gameTime = DateTime.fromISO(gameData.gameStart, { zone: 'utc'});
   const timeToGame = gameTime.diff(DateTime.utc());
   let pollDelay = parseInt(config.VOTE_OFFSET);
   if (timeToGame.milliseconds < pollDelay * 3600000) {
@@ -44,10 +44,10 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
       poll: {
         question: { text: "Pick Score?" },
         answers: [
-          { text: "*" + gameData.team1 + "*" + "2 - 0" + gameData.team2 },
-          { text: "*" + gameData.team1 + "*" + "2 - 1" + gameData.team2 },
-          { text: gameData.team1 + "1 - 2" + "*" + gameData.team2 + "*" },
-          { text: gameData.team1 + "0 - 2" + "*" + gameData.team2 + "*" },
+          { text: "*" + gameData.team1 + "*" + " 2 - 0 " + gameData.team2 },
+          { text: "*" + gameData.team1 + "*" + " 2 - 1 " + gameData.team2 },
+          { text: gameData.team1 + " 1 - 2 " + "*" + gameData.team2 + "*" },
+          { text: gameData.team1 + " 0 - 2 " + "*" + gameData.team2 + "*" },
         ],
         allowMultiselect: false,
         duration: pollDelay,
