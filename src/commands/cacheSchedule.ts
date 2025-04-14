@@ -1,14 +1,6 @@
-import {
-  ChannelType,
-  CommandInteraction,
-  SlashCommandBuilder,
-} from "discord.js";
-import { getFutureLeagueGames } from "../libs/lolFandom";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { config } from "../config";
-import { activeTimers } from "../libs/activeTimers";
 import PocketBase from "pocketbase";
-import { DateTime } from "luxon";
-import { sendGameMessage } from "../libs/gameStart";
 import { cacheScheduleLib } from "../libs/cache";
 const pb = new PocketBase(config.DB_IP);
 
@@ -22,7 +14,7 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   if (interaction.guild) {
-    cacheScheduleLib(interaction.guild)
+    cacheScheduleLib(interaction.guild);
     return interaction.reply("Finished!");
   }
 }

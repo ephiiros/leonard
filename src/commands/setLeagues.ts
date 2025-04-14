@@ -12,6 +12,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true));
 
 export async function execute(interaction: CommandInteraction) {
+  //this needs to recache 
   const leagues = interaction.options.get('leagues', true)
   if (typeof(leagues.value) !== 'string') {
     return interaction.reply("this should never happen")

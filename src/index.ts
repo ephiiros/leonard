@@ -4,10 +4,9 @@ import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
 import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
-import { cacheScheduleLib } from "./libs/cache";
 import { CronJob } from "cron";
-import { getMatchResult } from "./libs/lolFandom";
-import { addPoints } from "./libs/serverLib";
+import { getInfoPanel } from "./libs/infoPanel";
+import cronFunction from "./libs/cronFunc";
 const pb = new PocketBase(config.DB_IP);
 
 const client = new Client({
@@ -110,7 +109,7 @@ client.once("ready", async () => {
 
           if (serverData.channelID === "null") {
             console.log(`[${DateTime.utc()}] [${serverID}] no channelID`);
-            helloChannel.send("Pick a channel for the bot using /setchannel");
+            helloChannel.send("Pick a channel for the bot using /setchannel, then /setleagues");
           } else {
             // channel setup complete, send restart message
             const channel = guild.channels.cache.find(
@@ -119,52 +118,21 @@ client.once("ready", async () => {
 
             if (channel === undefined) return;
 
-            channel.send("bot restarted, channelID exists");
 
-            console.log(`[${DateTime.utc()}] Caching games`);
-            console.log(await cacheScheduleLib(guild));
+            await cronFunction(serverID, guild, channel);
 
-            const job = new CronJob(
+            new CronJob(
               "0 */1 * * * *",
-              async function () {
-                console.log(`[${DateTime.utc()}] Cron tick`);
-                console.log(await cacheScheduleLib(guild));
-                // check all active timers games
-                const serverDataCron = await pb
-                  .collection("servers")
-                  .getFirstListItem(`discordServerID='${serverID}'`);
-
-                serverDataCron.messageIDList.forEach(async (element: any) => {
-                  const pollClosed = (
-                    await channel.messages.fetch(element.messageID)
-                  ).poll?.resultsFinalized;
-                  console.log("poll closed?", pollClosed);
-                  if (pollClosed === false) return;
-                  const pollData = (
-                    await channel.messages.fetch(element.messageID)
-                  ).poll;
-                  if (pollData === null) return;
-                  const lolFandomData = await getMatchResult(element.gameID);
-                  if (lolFandomData === null) return;
-                  console.log("lol fandom match result", lolFandomData);
-                  if (lolFandomData.Winner === null) return;
-
-                  addPoints(lolFandomData, pollData);
-                  // remove active message ?
-                  // removeActiveMessage(pollData)
-                  //console.log("regular", serverData.messageIDList);
-                  //const filteredData = serverData.messageIDList.filter(
-                  //(messageItem: any) =>
-                  //messageItem.gameID !== lolFandomData.MatchId
-                  //);
-                  //pb.collection("servers").update(serverData.id, {
-                  //messageIDList: filteredData,
-                  //});
-                });
+              function () {
+                cronFunction(serverID, guild, channel);
               }, // onTick
               null, //onComplete
               true, // start
               "UTC"
+            );
+
+            channel.send(
+              "# Hello I'm Leonard!\n" + (await getInfoPanel(guild))
             );
           }
         });

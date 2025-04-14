@@ -25,6 +25,7 @@
 - invite bot to server with perms: 
   - todo: which perms!
 - inside db/: `./pocketbase serve`
+- settings -> batch API -> Enable -> max allowed set to 100
 - inside project root: 
 ```
 npm install

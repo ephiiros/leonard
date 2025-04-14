@@ -2,6 +2,7 @@ import { Guild } from "discord.js";
 import { config } from "../config";
 import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
+import { activeTimers } from "./activeTimers";
 const pb = new PocketBase(config.DB_IP);
 
 export async function getInfoPanel(guild: Guild) {
@@ -27,8 +28,6 @@ export async function getInfoPanel(guild: Guild) {
           const nextTime =
             DateTime.fromISO(nextGame["DateTime_UTC"], {zone: 'utc'}).toMillis() /
             1000;
-          console.log(nextGame)
-          console.log(nextTime)
           let activePolls = "\n "
           if (serverData.messageIDList.length > 0) {
             serverData.messageIDList.forEach((item: any) => {
@@ -39,7 +38,7 @@ export async function getInfoPanel(guild: Guild) {
             `- Server ID: ${guild.id}\n` +
             `- Channel ID: ${serverData.channelID}\n` +
             `- Leagues: ${serverData.leagues}\n` +
-            `- Timers: ${guild.id}\n` +
+            `- Timers: ${activeTimers.length}\n` +
             `- Active Polls: ${activePolls}` +
             `- Next Game: ${"<t:" + nextTime + ":R>"}`
           );

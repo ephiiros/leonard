@@ -11,42 +11,37 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
+  // this needs to retrigger starting checks and welcome msg
   const channelID = interaction.options.get("channelid", true);
-  console.log(channelID.value);
-  if (interaction.guild && channelID.value) {
-    const channel = await interaction.guild.channels.fetch(
-      channelID.value as string
-    );
-    console.log(channel);
-    if (channel) {
-      await pb
-        .collection("_superusers")
-        .authWithPassword(config.DB_USER, config.DB_PASSWORD);
-      const fetchRecord = await pb
-        .collection("servers")
-        .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
-      console.log("TEST HERE", fetchRecord.channelID)
-      if (fetchRecord.channelID === "null") {
-        // first time channel set
-        // TODO: create serverActiveTimers collection
-        pb.collections.create({
-          name: `${interaction.guildId}ActiveTimers`,
-          type: "base",
-          fields: [
-            { name: "MatchId", type: "text" },
-            { name: "DateTime_UTC", type: "text" },
-            { name: "Team1", type: "text" }, 
-            { name: "Team2", type: "text" },
-            { name: "BestOf", type: "text" }
-          ]
-        })
-      }
-      const record = await pb
-        .collection("servers")
-        .update(fetchRecord.id, { channelID: channelID.value });
-      console.log(record);
-      return interaction.reply(channel.name);
-    }
+  if (interaction.guild === null) return;
+  const channel = await interaction.guild.channels.fetch(
+    // fix "as" later
+    channelID.value as string
+  );
+  if (channel === null) return interaction.reply("error");
+  await pb
+    .collection("_superusers")
+    .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+  const fetchRecord = await pb
+    .collection("servers")
+    .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
+  console.log("TEST HERE", fetchRecord.channelID);
+  if (fetchRecord.channelID === "null") {
+    pb.collections.create({
+      name: `${interaction.guildId}ActiveTimers`,
+      type: "base",
+      fields: [
+        { name: "MatchId", type: "text" },
+        { name: "DateTime_UTC", type: "text" },
+        { name: "Team1", type: "text" },
+        { name: "Team2", type: "text" },
+        { name: "BestOf", type: "text" },
+      ],
+    });
   }
-  return interaction.reply("error");
+  const record = await pb
+    .collection("servers")
+    .update(fetchRecord.id, { channelID: channelID.value });
+  console.log(record);
+  return interaction.reply(channel.name);
 }
