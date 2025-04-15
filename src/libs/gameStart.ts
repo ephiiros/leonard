@@ -23,31 +23,51 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
     });
   const activePolls = serverData.messageIDList.map((item: any) => item.gameID);
   if (activePolls.includes(gameData.MatchId)) return;
-  const gameTime = DateTime.fromISO(gameData.gameStart, { zone: 'utc'});
+  const gameTime = DateTime.fromISO(gameData.gameStart, { zone: "utc" });
   const timeToGame = gameTime.diff(DateTime.utc());
+  console.log("gameTime", gameTime);
+  console.log("UTC", DateTime.utc());
+  const hoursTimeDiff = timeToGame.shiftTo("hours").toObject();
+  if (hoursTimeDiff.hours === undefined) return;
   let pollDelay = parseInt(config.VOTE_OFFSET);
-  if (timeToGame.milliseconds < pollDelay * 3600000) {
-    pollDelay = timeToGame.milliseconds / 3600000;
+  if (timeToGame.shiftTo("hours").hours < pollDelay) {
+    pollDelay = hoursTimeDiff.hours;
   }
+  console.log("pollDelay", pollDelay);
   if (pollDelay < 1) return; // discord cant do polls under an hour and i dont care enough
   let pollData = {
     poll: {
       question: { text: gameData.MatchId },
-      answers: [{ text: gameData.team1 }, { text: gameData.team2 }],
+      answers: [
+        { text: gameData.team1, emoji: "🟦" },
+        { text: gameData.team2, emoji: "🟥" },
+      ],
       allowMultiselect: false,
-      duration: pollDelay,
+      duration: pollDelay, // this gets floored ! thanks discord !
       layoutType: PollLayoutType.Default,
     },
   };
   if (gameData.bestOf === "3") {
     pollData = {
       poll: {
-        question: { text: "Pick Score?" },
+        question: { text: gameData.MatchId },
         answers: [
-          { text: "*" + gameData.team1 + "*" + " 2 - 0 " + gameData.team2 },
-          { text: "*" + gameData.team1 + "*" + " 2 - 1 " + gameData.team2 },
-          { text: gameData.team1 + " 1 - 2 " + "*" + gameData.team2 + "*" },
-          { text: gameData.team1 + " 0 - 2 " + "*" + gameData.team2 + "*" },
+          {
+            text: "(" + gameData.team1 + ")" + " [2 - 0] " + gameData.team2,
+            emoji: "🟦",
+          },
+          {
+            text: "(" + gameData.team1 + ")" + " [2 - 1] " + gameData.team2,
+            emoji: "🟦",
+          },
+          {
+            text: gameData.team1 + " [1 - 2] " + "(" + gameData.team2 + ")",
+            emoji: "🟥",
+          },
+          {
+            text: gameData.team1 + " [0 - 2] " + "(" + gameData.team2 + ")",
+            emoji: "🟥",
+          },
         ],
         allowMultiselect: false,
         duration: pollDelay,
@@ -60,12 +80,30 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
       poll: {
         question: { text: "Who wins?" },
         answers: [
-          { text: gameData.team1 + "3 - 0" + gameData.team2 },
-          { text: gameData.team1 + "3 - 1" + gameData.team2 },
-          { text: gameData.team1 + "3 - 2" + gameData.team2 },
-          { text: gameData.team1 + "2 - 3" + gameData.team2 },
-          { text: gameData.team1 + "1 - 3" + gameData.team2 },
-          { text: gameData.team1 + "0 - 3" + gameData.team2 },
+          {
+            text: gameData.team1 + "3 - 0" + gameData.team2,
+            emoji: ""
+          },
+          {
+            text: gameData.team1 + "3 - 1" + gameData.team2,
+            emoji: ""
+          },
+          {
+            text: gameData.team1 + "3 - 2" + gameData.team2,
+            emoji: ""
+          },
+          {
+            text: gameData.team1 + "2 - 3" + gameData.team2,
+            emoji: ""
+          },
+          {
+            text: gameData.team1 + "1 - 3" + gameData.team2,
+            emoji: ""
+          },
+          {
+            text: gameData.team1 + "0 - 3" + gameData.team2,
+            emoji: ""
+          },
         ],
         allowMultiselect: false,
         duration: pollDelay,
@@ -75,21 +113,21 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
   }
   const sentPoll = await channel.send(pollData);
 
-  pb.collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD)
-    .then(() => {
-      pb.collection("servers")
-        .getFirstListItem(`discordServerID='${channel.guildId}'`)
-        .then((serverData) => {
-          pb.collection("servers").update(serverData.id, {
-            messageIDList: [
-              ...serverData.messageIDList,
-              {
-                messageID: sentPoll.id,
-                gameID: gameData.MatchId,
-              },
-            ],
-          });
-        });
-    });
+  //pb.collection("_superusers")
+  //.authWithPassword(config.DB_USER, config.DB_PASSWORD)
+  //.then(() => {
+  //pb.collection("servers")
+  //.getFirstListItem(`discordServerID='${channel.guildId}'`)
+  //.then((serverData) => {
+  //pb.collection("servers").update(serverData.id, {
+  //messageIDList: [
+  //...serverData.messageIDList,
+  //{
+  //messageID: sentPoll.id,
+  //gameID: gameData.MatchId,
+  //},
+  //],
+  //});
+  //});
+  //});
 }

@@ -1,6 +1,7 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { CommandInteraction, Guild, SlashCommandBuilder, TextChannel } from "discord.js";
 import { config } from "../config";
 import PocketBase from "pocketbase";
+import cronFunction from "../libs/cronFunc";
 const pb = new PocketBase(config.DB_IP);
 
 export const data = new SlashCommandBuilder()
@@ -12,6 +13,9 @@ export const data = new SlashCommandBuilder()
       .setRequired(true));
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.guildId === null) return
+  if (interaction.guild === null) return
+  if (interaction.channel === null) return
   //this needs to recache 
   const leagues = interaction.options.get('leagues', true)
   if (typeof(leagues.value) !== 'string') {
@@ -26,5 +30,7 @@ export async function execute(interaction: CommandInteraction) {
     .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
   const record = await pb.collection('servers').update(fetchRecord.id, {"leagues": leagues.value})
   console.log(record)
+
+  cronFunction(interaction.guildId, interaction.guild, interaction.channel as TextChannel)
   return interaction.reply(record.leagues.toString());
 }

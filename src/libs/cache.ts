@@ -50,9 +50,11 @@ export async function cacheScheduleLib(guild: Guild) {
         cacheBatch.collection(`${guildId}ActiveTimers`).create({
           MatchId: item.MatchId,
           DateTime_UTC: item.DateTime_UTC.toISO(),
+          BestOf: item.BestOf,
           Team1: item.Team1,
           Team2: item.Team2,
-          BestOf: item.BestOf,
+          Team1Short: item.Team1Short,
+          Team2Short: item.Team2Short
         });
         const delayToGame = item.DateTime_UTC.diff(DateTime.utc()).toObject()
           .milliseconds;

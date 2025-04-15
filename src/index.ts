@@ -26,16 +26,19 @@ client.once("ready", async () => {
         .catch(async () => {
           console.log(`[${DateTime.utc()}] "servers" collection missing`);
           console.log(`[${DateTime.utc()}] creating "servers" collection`);
-          await pb.collections.create({
-            name: "servers",
-            type: "base",
-            fields: [
-              { name: "discordServerID", type: "text" },
-              { name: "channelID", type: "text" },
-              { name: "messageIDList", type: "json" },
-              { name: "leagues", type: "json" },
-            ],
-          });
+          await pb.collections.create(
+            {
+              name: "servers",
+              type: "base",
+              fields: [
+                { name: "discordServerID", type: "text" },
+                { name: "channelID", type: "text" },
+                { name: "messageIDList", type: "json" },
+                { name: "leagues", type: "json" },
+              ],
+            },
+            { requestKey: null }
+          );
           console.log(`[${DateTime.utc()}] "servers" collection created`);
         });
 
@@ -74,13 +77,10 @@ client.once("ready", async () => {
 
         // Fix the difference if there is any
         const newServers = botServerSet.difference(pbServetSet);
-        if (newServers.size === 0) {
-          console.log(`[${DateTime.utc()}] No unaccounted servers`);
-        } else {
-          const serverBatch = pb.createBatch();
+        const serverBatch = pb.createBatch();
+        if (newServers.size > 0) {
           newServers.forEach((serverID) => {
             console.log(`[${DateTime.utc()}] UNNACOUNTED SERVER ${serverID}`);
-            // TODO: add server to pocketbase with batch
             serverBatch.collection("servers").create({
               discordServerID: serverID,
               channelID: "null",
@@ -88,12 +88,14 @@ client.once("ready", async () => {
               leagues: [],
             });
           });
-          serverBatch.send();
         }
+        await serverBatch
+          .send()
+          .catch(() => console.log(`[${DateTime.utc()}] Batch Emtpy`));
 
         // deploy commands + channel setting
         botServerSet.forEach(async (serverID) => {
-          await deployCommands({ guildId: serverID });
+          //await deployCommands({ guildId: serverID });
 
           const guild = await client.guilds.fetch(serverID);
           const helloChannel = guild.channels.cache.find(
@@ -109,7 +111,7 @@ client.once("ready", async () => {
 
           if (serverData.channelID === "null") {
             console.log(`[${DateTime.utc()}] [${serverID}] no channelID`);
-            helloChannel.send("Pick a channel for the bot using /setchannel, then /setleagues");
+            helloChannel.send("Pick a channel for the bot using /setchannel");
           } else {
             // channel setup complete, send restart message
             const channel = guild.channels.cache.find(
@@ -117,7 +119,6 @@ client.once("ready", async () => {
             ) as TextChannel | undefined;
 
             if (channel === undefined) return;
-
 
             await cronFunction(serverID, guild, channel);
 
@@ -129,10 +130,6 @@ client.once("ready", async () => {
               null, //onComplete
               true, // start
               "UTC"
-            );
-
-            channel.send(
-              "# Hello I'm Leonard!\n" + (await getInfoPanel(guild))
             );
           }
         });

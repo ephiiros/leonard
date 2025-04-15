@@ -22,26 +22,29 @@ export async function execute(interaction: CommandInteraction) {
   await pb
     .collection("_superusers")
     .authWithPassword(config.DB_USER, config.DB_PASSWORD);
-  const fetchRecord = await pb
+  const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
-  console.log("TEST HERE", fetchRecord.channelID);
-  if (fetchRecord.channelID === "null") {
+  if (serverData.channelID === "null") {
     pb.collections.create({
       name: `${interaction.guildId}ActiveTimers`,
       type: "base",
       fields: [
         { name: "MatchId", type: "text" },
         { name: "DateTime_UTC", type: "text" },
+        { name: "BestOf", type: "text" },
         { name: "Team1", type: "text" },
         { name: "Team2", type: "text" },
-        { name: "BestOf", type: "text" },
+        { name: "Team1Short", type: "text" },
+        { name: "Team2Short", type: "text" },
       ],
     });
   }
   const record = await pb
     .collection("servers")
-    .update(fetchRecord.id, { channelID: channelID.value });
+    .update(serverData.id, { channelID: channelID.value });
   console.log(record);
-  return interaction.reply(channel.name);
+  return interaction.reply(
+    "channel set to " + channel.name + " now do /setleagues"
+  );
 }
