@@ -82,27 +82,27 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
         answers: [
           {
             text: gameData.team1 + "3 - 0" + gameData.team2,
-            emoji: ""
+            emoji: "",
           },
           {
             text: gameData.team1 + "3 - 1" + gameData.team2,
-            emoji: ""
+            emoji: "",
           },
           {
             text: gameData.team1 + "3 - 2" + gameData.team2,
-            emoji: ""
+            emoji: "",
           },
           {
             text: gameData.team1 + "2 - 3" + gameData.team2,
-            emoji: ""
+            emoji: "",
           },
           {
             text: gameData.team1 + "1 - 3" + gameData.team2,
-            emoji: ""
+            emoji: "",
           },
           {
             text: gameData.team1 + "0 - 3" + gameData.team2,
-            emoji: ""
+            emoji: "",
           },
         ],
         allowMultiselect: false,
@@ -113,21 +113,21 @@ export async function sendPoll(channel: TextChannel, gameData: gameData) {
   }
   const sentPoll = await channel.send(pollData);
 
-  //pb.collection("_superusers")
-  //.authWithPassword(config.DB_USER, config.DB_PASSWORD)
-  //.then(() => {
-  //pb.collection("servers")
-  //.getFirstListItem(`discordServerID='${channel.guildId}'`)
-  //.then((serverData) => {
-  //pb.collection("servers").update(serverData.id, {
-  //messageIDList: [
-  //...serverData.messageIDList,
-  //{
-  //messageID: sentPoll.id,
-  //gameID: gameData.MatchId,
-  //},
-  //],
-  //});
-  //});
-  //});
+  pb.collection("_superusers")
+    .authWithPassword(config.DB_USER, config.DB_PASSWORD)
+    .then(() => {
+      pb.collection("servers")
+        .getFirstListItem(`discordServerID='${channel.guildId}'`)
+        .then((serverData) => {
+          pb.collection("servers").update(serverData.id, {
+            messageIDList: [
+              ...serverData.messageIDList,
+              {
+                messageID: sentPoll.id,
+                gameID: gameData.MatchId,
+              },
+            ],
+          });
+        });
+    });
 }
