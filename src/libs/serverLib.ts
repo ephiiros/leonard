@@ -1,51 +1,68 @@
 import { Poll } from "discord.js";
-import { lolFandomResponse } from "./lolFandomTypes";
-import { config } from "../config";
-import PocketBase from "pocketbase";
-const pb = new PocketBase(config.DB_IP);
+import { MatchData } from "./lolFandomTypes";
+import { doAuth, logger } from "./common";
 
-export async function addPoints(matchData: any, pollData: Poll) {
-  console.log("POLL DATA")
-  await pb.collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD)
-  console.log(pollData)
+export async function addPoints(matchData: MatchData, pollData: Poll) {
+  logger.info(`addPoints ${matchData.MatchId}`)
+  const pb = await doAuth()
+
   if (matchData.BestOf === "1") {
+
+    // check if users collection exists for server
+    await pb
+      .collection(`${pollData.message.guildId}Users`)
+      .getList(1, 1)
+      .catch(async () => {
+        await pb.collections.create({
+          name: pollData.message.guildId + "Users",
+          type: "base",
+          fields: [
+            { name: "discordUserID", type: "text" },
+            { name: "username", type: "text" },
+          ],
+        }).catch((e) => {
+          logger.info("ERRORR")
+          logger.info(e)});
+      });
+
     pollData.answers.each(async (pollItem, id) => {
-      const voters = await pollItem.fetchVoters()
+      // is user in server users list
+      const voters = await pollItem.fetchVoters();
       voters.forEach(async (voterUser) => {
-        pb.collection("users")
+        await pb
+          .collection(`${pollData.message.guildId}Users`)
           .getFirstListItem(`discordUserID=${voterUser.id}`)
-          .then(() => {
-            pb.collection("user" + voterUser.id)
-              .create({
-                "MatchId": matchData.matchId,
-                "Vote": "-1"
-              })
-          })
           .catch(() => {
-            pb.collection("users")
-              .create({
-                "discordUserID": voterUser.id,
-                "username": voterUser.username
-              })
+            // user is not in users list of server
+            pb.collection(`${pollData.message.guildId}Users`).create({
+              discordUserID: voterUser.id,
+              username: voterUser.username,
+            });
+          });
+        // user guaranteed in server
+
+        // check that user history is created
+        await pb
+          .collection(`User${voterUser.id}`)
+          .getList(1, 1)
+          .catch(() => {
             pb.collections.create({
-              name: "user" + voterUser.id,
+              name: "User" + voterUser.id,
               type: "base",
-              fields : [
+              fields: [
                 { name: "MatchId", type: "text" },
-                { name: "Vote", type: "text"}
-              ]
-            })
-            .then(() => {
-              pb.collection("user" + voterUser.id)
-                .create({
-                  "MatchId": matchData.matchId,
-                  "Vote": "-1"
-                })
-            })
-          })
-      })
-    })
+                { name: "PointsRecieved", type: "text" },
+              ],
+            });
+          });
+
+        await pb.collection(`User${voterUser.id}`).create({
+          MatchId: matchData.MatchId,
+          PointsRecieved: 1,
+        });
+      });
+    });
+
   }
   if (matchData.BestOf === "3") {
     let pointsList: number[] = [0, 0, 0, 0];
@@ -63,40 +80,60 @@ export async function addPoints(matchData: any, pollData: Poll) {
       pointsList = [0, 0, 1, 3];
     }
 
-    pollData.answers.each(async (pollItem, id) => {
-      const voters = await pollItem.fetchVoters()
-      voters.forEach(async (voterUser) => {
-        pb.collection("users")
-          .getFirstListItem(`discordUserID='${voterUser.id}'`)
-          .then(() => {
+    // check if users collection exists for server
+    await pb
+      .collection(`${pollData.message.guildId}Users`)
+      .getList(1, 1)
+      .catch(async () => {
+        await pb.collections.create({
+          name: pollData.message.guildId + "Users",
+          type: "base",
+          fields: [
+            { name: "discordUserID", type: "text" },
+            { name: "username", type: "text" },
+          ],
+        }).catch((e) => {
+          logger.info("ERRORR")
+          logger.info(e)});
+      });
 
-          })
+    pollData.answers.each(async (pollItem, id) => {
+      // is user in server users list
+      const voters = await pollItem.fetchVoters();
+      voters.forEach(async (voterUser) => {
+        await pb
+          .collection(`${pollData.message.guildId}Users`)
+          .getFirstListItem(`discordUserID=${voterUser.id}`)
           .catch(() => {
-            // assuming user not found 
-            pb.collection("users")
-              .create({
-                "discordUserID": voterUser.id,
-                "username": voterUser.username
-              })
+            // user is not in users list of server
+            pb.collection(`${pollData.message.guildId}Users`).create({
+              discordUserID: voterUser.id,
+              username: voterUser.username,
+            });
+          });
+        // user guaranteed in server
+
+        // check that user history is created
+        await pb
+          .collection(`User${voterUser.id}`)
+          .getList(1, 1)
+          .catch(() => {
             pb.collections.create({
-              name: "user" + voterUser.id,
+              name: "User" + voterUser.id,
               type: "base",
-              fields : [
+              fields: [
                 { name: "MatchId", type: "text" },
-                { name: "Vote", type: "text"}
-              ]
-            })
-          })
-        
-        pb.collection("user" + voterUser.id) 
-          .create({
-            "MatchId": matchData.matchId,
-            "Vote": "-1"
-          })
-        console.log("ADD TO USER = ", voterUser)
-        console.log("THIS AMOUNT OF POINTS = ", pointsList[id-1])
-      })
-    })
+                { name: "PointsRecieved", type: "text" },
+              ],
+            });
+          });
+
+        await pb.collection(`User${voterUser.id}`).create({
+          MatchId: matchData.MatchId,
+          PointsRecieved: pointsList[id - 1],
+        });
+      });
+    });
   }
   if (matchData.BestOf === "5") {
   }

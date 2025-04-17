@@ -30,6 +30,7 @@ export async function getFutureLeagueGames(league: string) {
     order_by: "MS.DateTime_UTC ASC",
   });
 
+  // this fetch failed
   const response = await fetch(baseUrl + params.toString());
   const responseJson: lolFandomResponse = await response.json();
   //console.log(JSON.stringify(responseJson, null, 2));
@@ -72,7 +73,6 @@ export async function getSingleMatchData(matchId: string) {
 
   const response = await fetch(baseUrl + params.toString());
   const responseJson: lolFandomResponse = await response.json();
-  console.log(JSON.stringify(responseJson, null,2 ))
 
   const singleMatch = responseJson.cargoquery[0].title
   return {

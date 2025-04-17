@@ -1,10 +1,8 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { config } from "../config";
-import PocketBase from "pocketbase";
 import { DateTime } from "luxon";
 import { AsciiTable3 } from "ascii-table3";
-import { MatchData } from "../libs/lolFandomTypes";
-const pb = new PocketBase(config.DB_IP);
+import { doAuth } from "../libs/common";
 
 export const data = new SlashCommandBuilder()
   .setName("showschedule")
@@ -12,10 +10,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   if (interaction.guildId === null) return;
-
-  await pb
-    .collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+  const pb = await doAuth()
   const result = await pb
     .collection(`${interaction.guildId}ActiveTimers`)
     .getList(1, 50, {});
@@ -25,7 +20,7 @@ export async function execute(interaction: CommandInteraction) {
     "Time (UTC)",
     "Team1",
     "Team2",
-    "BestOf"
+    "BoX"
   );
   let overflow = false;
   let extraRows = 0;
@@ -47,7 +42,8 @@ export async function execute(interaction: CommandInteraction) {
   }
   output += table.toString();
   if (extraRows > 0) {
-    output += "\n..." + extraRows.toString() + "extra rows" + "\n```";
+    output += "\n..." + extraRows.toString() + "extra rows";
   }
+  output += "\n```"
   return interaction.reply(output);
 }

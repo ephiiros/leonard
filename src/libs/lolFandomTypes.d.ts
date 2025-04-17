@@ -25,7 +25,7 @@ export type cargoQueryItem = {
 
 export type MatchData = {
   MatchId: string;
-  DateTime_UTC: DateTime;
+  DateTime_UTC: DateTime | string;
   BestOf: string;
   Winner: string | null;
   Team1: string;

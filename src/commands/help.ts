@@ -5,5 +5,12 @@ export const data = new SlashCommandBuilder()
   .setDescription("shows all commands");
 
 export async function execute(interaction: CommandInteraction) {
-  return interaction.reply("NOT DONE");
+  let output = "" +
+  "- `/ping` \n" +
+  "- `/info` \n" +
+  "- `/showschedule` \n" +
+  "- `/leaderboard` \n" +
+  "- `/profile` \n"
+
+  return interaction.reply(output);
 }

@@ -1,17 +1,14 @@
 import { ChannelType, Guild } from "discord.js";
 import { getFutureLeagueGames } from "../libs/lolFandom";
 import { config } from "../config";
-import { activeTimers } from "../libs/activeTimers";
-import PocketBase from "pocketbase";
+import { activeTimers, doAuth } from "../libs/common";
 import { DateTime } from "luxon";
 import { sendPoll } from "../libs/gameStart";
-const pb = new PocketBase(config.DB_IP);
+import { logger } from "./common";
 
 export async function cacheScheduleLib(guild: Guild) {
   const guildId = guild.id;
-  await pb
-    .collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+  const pb = await doAuth()
   const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID='${guildId}'`);
@@ -59,27 +56,27 @@ export async function cacheScheduleLib(guild: Guild) {
         const delayToGame = item.DateTime_UTC.diff(DateTime.utc()).toObject()
           .milliseconds;
 
-        let isoGameData = item.DateTime_UTC.toISO();
-        if (isoGameData === null) {
-          isoGameData = "gg";
-        }
 
         if (delayToGame !== undefined) {
           const myNewTimer = setTimeout(() => {
             sendPoll(channelResult, {
-              team1: item.Team1,
-              team2: item.Team2,
-              gameStart: isoGameData,
               MatchId: item.MatchId,
-              bestOf: item.BestOf,
+              DateTime_UTC: item.DateTime_UTC,
+              BestOf: item.BestOf,
+              Winner: item.Winner,
+              Team1: item.Team1,
+              Team2: item.Team2,
+              Team1Short: item.Team1Short,
+              Team2Short: item.Team2Short,
+              Team1Score: item.Team1Score,
+              Team2Score: item.Team2Score
             });
           }, Math.max(0, delayToGame - parseInt(config.VOTE_OFFSET) * 3600000));
           activeTimers.push(myNewTimer);
         }
       });
     }
-    console.log("batching")
     await cacheBatch.send({ requestKey: null });
+    logger.info(`[${guild.id}] Cached "${league}"`)
   }
-  return `[${DateTime.utc()}] Cache Complete`;
 }

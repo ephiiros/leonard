@@ -1,56 +1,50 @@
-import { Channel, Guild, TextChannel } from "discord.js";
+import { Client, TextChannel } from "discord.js";
 import { cacheScheduleLib } from "./cache";
-import { config } from "../config";
-import PocketBase from "pocketbase";
 import { getSingleMatchData } from "./lolFandom";
-const pb = new PocketBase(config.DB_IP);
-import { DateTime } from "luxon";
 import { addPoints } from "./serverLib";
+import { doAuth, logger } from "./common";
+import { MatchData } from "./lolFandomTypes";
+
+export type messageData = {
+  messageID: string;
+  MatchData: MatchData;
+};
 
 export default async function cronFunction(
-  serverID: string,
-  guild: Guild,
+  guildId: string,
+  client: Client,
   channel: TextChannel
 ) {
-  console.log(`[${DateTime.utc()}] Cron tick`);
-  console.log(await cacheScheduleLib(guild));
+  logger.info(`[${guildId}] Cron tick`);
   // check all active timers games
+  const guild = await client.guilds.fetch(guildId)
+  await cacheScheduleLib(guild);
+  const pb = await doAuth();
+  pb.collection("servers")
+    .getFirstListItem(`discordServerID='${guildId}'`)
+    .then((serverDataCron) => {
+      serverDataCron.messageIDList.forEach(async (item: messageData) => {
+        const message = await channel.messages.fetch(item.messageID);
+        if (message.poll === null) return;
 
-  // TEST 
-  console.log(await getSingleMatchData("LCK/2025 Season/Rounds 1-2_Week 3_1"))
-  // END TEST 
+        // this is false if noone votes, use timestamp of end instead ?
+        const pollClosed = message.poll.resultsFinalized;
+        logger.info(`[${guildId}] ${item.MatchData.MatchId} ${pollClosed}`);
+        if (pollClosed === false) return;
 
-  await pb
-    .collection("_superusers")
-    .authWithPassword(config.DB_USER, config.DB_PASSWORD);
-  const serverDataCron = await pb
-    .collection("servers")
-    .getFirstListItem(`discordServerID='${serverID}'`);
+        const lolFandomData = await getSingleMatchData(item.MatchData.MatchId);
+        logger.info(`lol fandom match result winner ${lolFandomData.Winner}`);
+        if (lolFandomData.Winner === null) return;
 
-  serverDataCron.messageIDList.forEach(async (element: any) => {
-    const message = await channel.messages.fetch(element.messageID);
-    if (message.poll === null) return;
+        addPoints(lolFandomData, message.poll);
 
-    const pollClosed = message.poll.resultsFinalized;
-    console.log(
-      `[${DateTime.utc()}] [${serverID}] ${element.gameID} ${pollClosed}`
-    );
-    if (pollClosed === false) return;
-
-    const lolFandomData = await getSingleMatchData(element.gameID);
-
-    console.log("lol fandom match result", lolFandomData);
-    if (lolFandomData.Winner === null) return;
-
-    addPoints(lolFandomData, message.poll);
-
-    // removeActiveMessage(pollData)
-    console.log("regular", serverDataCron.messageIDList);
-    const filteredData = serverDataCron.messageIDList.filter(
-      (messageItem: any) => messageItem.gameID !== lolFandomData.MatchId
-    );
-    pb.collection("servers").update(serverDataCron.id, {
-      messageIDList: filteredData,
+        // removeActiveMessage(pollData)
+        const filteredData = serverDataCron.messageIDList.filter(
+          (messageItem: messageData) => messageItem.MatchData.MatchId !== lolFandomData.MatchId
+        );
+        pb.collection("servers").update(serverDataCron.id, {
+          messageIDList: filteredData,
+        });
+      });
     });
-  });
 }
