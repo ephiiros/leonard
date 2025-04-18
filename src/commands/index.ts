@@ -6,6 +6,7 @@ import * as set from "./set"
 import * as help from "./help"
 import * as profile from "./profile"
 import * as leaderboard from "./leaderboard"
+import * as suyog from "./suyog"
 
 export const commands = {
   ping,
@@ -15,5 +16,6 @@ export const commands = {
   set,
   help,
   profile, 
-  leaderboard
+  leaderboard,
+  suyog
 };
