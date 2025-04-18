@@ -32,9 +32,9 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
         await pb
           .collection(`${pollData.message.guildId}Users`)
           .getFirstListItem(`discordUserID=${voterUser.id}`)
-          .catch(() => {
+          .catch(async () => {
             // user is not in users list of server
-            pb.collection(`${pollData.message.guildId}Users`).create({
+            await pb.collection(`${pollData.message.guildId}Users`).create({
               discordUserID: voterUser.id,
               username: voterUser.username,
             });
@@ -45,8 +45,8 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
         await pb
           .collection(`User${voterUser.id}`)
           .getList(1, 1)
-          .catch(() => {
-            pb.collections.create({
+          .catch(async () => {
+            await pb.collections.create({
               name: "User" + voterUser.id,
               type: "base",
               fields: [
@@ -104,9 +104,9 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
         await pb
           .collection(`${pollData.message.guildId}Users`)
           .getFirstListItem(`discordUserID=${voterUser.id}`)
-          .catch(() => {
+          .catch(async () => {
             // user is not in users list of server
-            pb.collection(`${pollData.message.guildId}Users`).create({
+            await pb.collection(`${pollData.message.guildId}Users`).create({
               discordUserID: voterUser.id,
               username: voterUser.username,
             });
@@ -117,8 +117,8 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
         await pb
           .collection(`User${voterUser.id}`)
           .getList(1, 1)
-          .catch(() => {
-            pb.collections.create({
+          .catch(async () => {
+            await pb.collections.create({
               name: "User" + voterUser.id,
               type: "base",
               fields: [
