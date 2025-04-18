@@ -9,8 +9,8 @@ export async function execute(interaction: CommandInteraction) {
     "suy🤓g",
     "g🤓yus",
     "b🤓gus",
-    "s🤓ggy ",
+    "s🤓ggy",
     "s🤓ug"
   ]
-  return interaction.reply(lines[Math.floor(Math.random())*lines.length]);
+  return interaction.reply(lines[Math.floor(Math.random()*lines.length)]);
 }
