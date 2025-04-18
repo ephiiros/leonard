@@ -6,11 +6,11 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   const lines = [
-    "suyog",
-    "goyus",
-    "bogus",
-    "soggy",
-    "soug"
+    "suy🤓g",
+    "g🤓yus",
+    "b🤓gus",
+    "s🤓ggy ",
+    "s🤓ug"
   ]
   return interaction.reply(lines[Math.floor(Math.random())*lines.length]);
 }
