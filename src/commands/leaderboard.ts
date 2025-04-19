@@ -8,22 +8,40 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   const pb = await doAuth();
   const leaderboard: any = {};
-  pb.collection(`${interaction.guildId}Users`)
+  await pb.collection(`${interaction.guildId}Users`)
     .getFullList()
-    .then((userList) => {
-      userList.forEach((userItem) => {
+    .then(async (userList) => {
+      for (var userItem of userList) {
         leaderboard[userItem.discordUserID] = 0
-        pb.collection(`User${userItem.discordUserID}`)
+        await pb.collection(`User${userItem.discordUserID}`)
           .getFullList()
           .then((historyList) => {
             historyList.forEach((historyItem) => {
-              leaderboard[userItem.discordUserID] += historyItem.PointsRecieved
+              leaderboard[userItem.discordUserID] += parseInt(historyItem.PointsRecieved)
             })
           });
-      });
+      }
     })
     .catch((e) => {
       logger.error(e);
     });
-  return interaction.reply("Pong!");
+  let leaderboardSorted = []
+  let longestname = 0
+  for (const [key, value] of Object.entries(leaderboard)) {
+    const user = await interaction.client.users.fetch(key)
+    if (user.username.length > longestname) {
+      longestname = user.username.length
+    }
+    leaderboardSorted.push({username: user.username, score: value})
+  }
+  // i cba
+  //@ts-ignore 
+  leaderboardSorted.sort((a, b) => b.score - a.score)
+
+  let output = "```\n"
+  for (var item of leaderboardSorted) {
+    output += `${item.username}${".".repeat(2 + longestname - item.username.length)}${item.score}\n`
+  }
+  output += "```"
+  return interaction.reply(output)
 }

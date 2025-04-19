@@ -72,7 +72,7 @@ client.once("ready", async () => {
 
   // deploy commands + channel setting
   botGuildIdSet.forEach(async (serverID) => {
-    await deployCommands({ guildId: serverID });
+    //await deployCommands({ guildId: serverID });
 
     const guild = await client.guilds.fetch(serverID);
     const helloChannel = guild.channels.cache.find(

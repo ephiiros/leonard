@@ -25,3 +25,7 @@ export async function doAuth() {
 }
 
 export const activeTimers: NodeJS.Timeout[] = [];
+
+export function getShortMatchId(MatchId: string) {
+  return MatchId.replaceAll(" Season", "").replaceAll("Season_", "")
+}
