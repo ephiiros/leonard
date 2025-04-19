@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { lolFandomResponse } from "./lolFandomTypes";
 import { data } from "../commands/ping";
+import { logger } from "./common";
 const baseUrl: string = "https://lol.fandom.com/api.php?";
 
 export async function getFutureLeagueGames(league: string) {
@@ -74,6 +75,7 @@ export async function getSingleMatchData(matchId: string) {
   const response = await fetch(baseUrl + params.toString());
   const responseJson: lolFandomResponse = await response.json();
 
+  logger.info(responseJson)
   const singleMatch = responseJson.cargoquery[0].title
   return {
     MatchId: singleMatch.MatchId,

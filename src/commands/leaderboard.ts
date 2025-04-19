@@ -8,40 +8,61 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   const pb = await doAuth();
   const leaderboard: any = {};
-  await pb.collection(`${interaction.guildId}Users`)
+  // get the preset leaderboard string
+  // pb serverData
+  // pb.collection(`${serverid}Leaderboards)
+  // check if item like leaderboardstring exists
+  // check if leaderboard is valid
+
+  const serverData = await pb
+    .collection(`servers`)
+    .getFirstListItem(`discordServerID='${interaction.guildId}'`);
+  await pb
+    .collection(`${interaction.guildId}Users`)
     .getFullList()
     .then(async (userList) => {
       for (var userItem of userList) {
-        leaderboard[userItem.discordUserID] = 0
-        await pb.collection(`User${userItem.discordUserID}`)
-          .getFullList()
+        leaderboard[userItem.discordUserID] = 0;
+        await pb
+          .collection(`User${userItem.discordUserID}`)
+          .getFullList({
+            filter: `MatchId~'${serverData.leaderboard}'`,
+          })
           .then((historyList) => {
-            historyList.forEach((historyItem) => {
-              leaderboard[userItem.discordUserID] += parseInt(historyItem.PointsRecieved)
-            })
+            for (var historyItem of historyList) {
+              if (historyItem.MatchId)
+                leaderboard[userItem.discordUserID] += parseInt(
+                  historyItem.PointsRecieved
+                );
+            }
           });
       }
     })
     .catch((e) => {
       logger.error(e);
     });
-  let leaderboardSorted = []
-  let longestname = 0
+  let leaderboardSorted = [];
+  let longestname = 0;
   for (const [key, value] of Object.entries(leaderboard)) {
-    const user = await interaction.client.users.fetch(key)
+    const user = await interaction.client.users.fetch(key);
     if (user.username.length > longestname) {
-      longestname = user.username.length
+      longestname = user.username.length;
     }
-    leaderboardSorted.push({username: user.username, score: value})
+    leaderboardSorted.push({ username: user.username, score: value });
   }
   // i cba
-  //@ts-ignore 
-  leaderboardSorted.sort((a, b) => b.score - a.score)
+  //@ts-ignore
+  leaderboardSorted.sort((a, b) => b.score - a.score);
 
-  let output = "```\n"
+  let counter = 1
+  let output = "```\n";
+  output += `leaderboard: "${serverData.leaderboard}"\n`
   for (var item of leaderboardSorted) {
-    output += `${item.username}${".".repeat(2 + longestname - item.username.length)}${item.score}\n`
+    output += `${counter}. ${item.username}${".".repeat(
+      3 + longestname - item.username.length
+    )}${item.score}\n`;
+    counter += 1;
   }
-  output += "```"
+  output += "```";
   return interaction.reply(output)
 }

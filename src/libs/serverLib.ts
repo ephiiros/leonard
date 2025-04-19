@@ -123,6 +123,8 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
               type: "base",
               fields: [
                 { name: "MatchId", type: "text" },
+                // FULL MATCH DATA 
+                // vote picked 
                 { name: "PointsRecieved", type: "text" },
               ],
             });

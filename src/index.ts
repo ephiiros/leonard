@@ -30,6 +30,7 @@ client.once("ready", async () => {
           fields: [
             { name: "discordServerID", type: "text" },
             { name: "channelID", type: "text" },
+            { name: "leaderboard", type: "text"},
             { name: "messageIDList", type: "json" },
             { name: "leagues", type: "json" },
           ],
@@ -63,6 +64,7 @@ client.once("ready", async () => {
       serverBatch.collection("servers").create({
         discordServerID: serverID,
         channelID: "null",
+        leaderboard: "null",
         messageIDList: [],
         leagues: [],
       });

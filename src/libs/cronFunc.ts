@@ -45,6 +45,8 @@ export default async function cronFunction(
         pb.collection("servers").update(serverDataCron.id, {
           messageIDList: filteredData,
         });
+
+        // invalidateLeaderboards
       });
     });
 }
