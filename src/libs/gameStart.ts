@@ -6,16 +6,21 @@ import { doAuth, logger } from "./common";
 import { messageData } from "./cronFunc";
 
 export async function sendPoll(channel: TextChannel, gameData: MatchData) {
+  logger.info(`sendPoll(${channel.id}, ${gameData}`)
   const pb = await doAuth()
   const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID='${channel.guildId}'`, {
       requestKey: null,
     });
+
+  // has poll already been sent
   const activePolls = serverData.messageIDList.map(
     (item: messageData) => item.MatchData.MatchId
   );
   if (activePolls.includes(gameData.MatchId)) return;
+
+  // getting poll delay
   if (typeof gameData.DateTime_UTC === "string") {
     gameData.DateTime_UTC = DateTime.fromISO(gameData.DateTime_UTC);
   }
@@ -26,8 +31,10 @@ export async function sendPoll(channel: TextChannel, gameData: MatchData) {
   if (timeToGame.shiftTo("hours").hours < pollDelay) {
     pollDelay = hoursTimeDiff.hours;
   }
+
   // discord cant do polls under an hour and i dont care enough
   if (pollDelay < 1) return;
+
   let pollData = {
     poll: {
       question: { text: gameData.MatchId },
@@ -106,9 +113,9 @@ export async function sendPoll(channel: TextChannel, gameData: MatchData) {
   }
   const sentPoll = await channel.send(pollData);
 
-  pb.collection("servers")
+  await pb.collection("servers")
     .getFirstListItem(`discordServerID='${channel.guildId}'`)
-    .then((serverData) => {
+    .then(async (serverData) => {
       if (typeof gameData.DateTime_UTC !== "string") {
         const isoString = gameData.DateTime_UTC.toISO();
         if (isoString !== null) {
@@ -117,7 +124,7 @@ export async function sendPoll(channel: TextChannel, gameData: MatchData) {
           gameData.DateTime_UTC = "INVALID TIME";
         }
       }
-      pb.collection("servers").update(serverData.id, {
+      await pb.collection("servers").update(serverData.id, {
         messageIDList: [
           ...serverData.messageIDList,
           {
