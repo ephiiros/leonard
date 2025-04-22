@@ -26,6 +26,12 @@ export async function execute(interaction: CommandInteraction) {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // avatar background
+    ctx.fillStyle = "#dedede";
+    ctx.beginPath()
+    ctx.roundRect(15, 15, canvas.width - 30, 50, 10);
+    ctx.fill()
+
   // avatar
   const avatarImg = await loadImage(
     interaction.user.displayAvatarURL({ extension: "jpg" })

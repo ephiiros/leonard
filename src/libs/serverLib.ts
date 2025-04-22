@@ -1,28 +1,31 @@
 import { Poll } from "discord.js";
 import { MatchData } from "./lolFandomTypes";
 import { doAuth, logger } from "./common";
+import { DateTime } from "luxon";
 
 export async function addPoints(matchData: MatchData, pollData: Poll) {
-  logger.info(`addPoints ${matchData.MatchId}`)
-  const pb = await doAuth()
+  logger.info(`addPoints ${matchData.MatchId}`);
+  const pb = await doAuth();
 
   if (matchData.BestOf === "1") {
-
     // check if users collection exists for server
     await pb
       .collection(`${pollData.message.guildId}Users`)
       .getList(1, 1)
       .catch(async () => {
-        await pb.collections.create({
-          name: pollData.message.guildId + "Users",
-          type: "base",
-          fields: [
-            { name: "discordUserID", type: "text" },
-            { name: "username", type: "text" },
-          ],
-        }).catch((e) => {
-          logger.info("ERRORR")
-          logger.info(e)});
+        await pb.collections
+          .create({
+            name: pollData.message.guildId + "Users",
+            type: "base",
+            fields: [
+              { name: "discordUserID", type: "text" },
+              { name: "username", type: "text" },
+            ],
+          })
+          .catch((e) => {
+            logger.info("ERRORR");
+            logger.info(e);
+          });
       });
 
     pollData.answers.each(async (pollItem, id) => {
@@ -62,7 +65,6 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
         });
       });
     });
-
   }
   if (matchData.BestOf === "3") {
     let pointsList: number[] = [0, 0, 0, 0];
@@ -85,16 +87,19 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
       .collection(`${pollData.message.guildId}Users`)
       .getList(1, 1)
       .catch(async () => {
-        await pb.collections.create({
-          name: pollData.message.guildId + "Users",
-          type: "base",
-          fields: [
-            { name: "discordUserID", type: "text" },
-            { name: "username", type: "text" },
-          ],
-        }).catch((e) => {
-          logger.info("ERRORR")
-          logger.info(e)});
+        await pb.collections
+          .create({
+            name: pollData.message.guildId + "Users",
+            type: "base",
+            fields: [
+              { name: "discordUserID", type: "text" },
+              { name: "username", type: "text" },
+            ],
+          })
+          .catch((e) => {
+            logger.info("ERRORR");
+            logger.info(e);
+          });
       });
 
     pollData.answers.each(async (pollItem, id) => {
@@ -123,8 +128,14 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
               type: "base",
               fields: [
                 { name: "MatchId", type: "text" },
-                // FULL MATCH DATA 
-                // vote picked 
+                { name: "DateTime_UTC", type: "text" },
+                { name: "Team1", type: "text" },
+                { name: "Team2", type: "text" },
+                { name: "Team1Short", type: "text" },
+                { name: "Team2Short", type: "text" },
+                { name: "Team1Score", type: "text" },
+                { name: "Team2Score", type: "text" },
+                { name: "Picked", type: "text" },
                 { name: "PointsRecieved", type: "text" },
               ],
             });
@@ -132,6 +143,18 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
 
         await pb.collection(`User${voterUser.id}`).create({
           MatchId: matchData.MatchId,
+          DateTime_UTC:
+            typeof matchData.DateTime_UTC === "string"
+              ? matchData.DateTime_UTC
+              : matchData.DateTime_UTC.toISO(),
+          BestOf: matchData.BestOf,
+          Winner: matchData.Winner,
+          Team1: matchData.Team1,
+          Team2: matchData.Team2,
+          Team1Short: matchData.Team1Short,
+          Team2Short: matchData.Team2Short,
+          Team1Score: matchData.Team1Score,
+          Team2Score: matchData.Team2Score,
           PointsRecieved: pointsList[id - 1],
         });
       });
