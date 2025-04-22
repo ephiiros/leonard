@@ -8,7 +8,7 @@ export async function execute(interaction: CommandInteraction) {
   let output = "" +
   "- `/ping` \n" +
   "- `/info` \n" +
-  "- `/showschedule` \n" +
+  "- `/schedule` \n" +
   "- `/leaderboard` \n" +
   "- `/profile` \n"
 

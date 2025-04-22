@@ -1,7 +1,6 @@
 import * as ping from "./ping";
 import * as info from "./info"
-import * as cacheschedule from "./cacheSchedule"
-import * as showschedule from "./showSchedule"
+import * as showschedule from "./schedule"
 import * as set from "./set"
 import * as help from "./help"
 import * as profile from "./profile"
@@ -12,7 +11,6 @@ import * as history from "./history"
 export const commands = {
   ping,
   info,
-  cacheschedule,
   showschedule,
   set,
   help,

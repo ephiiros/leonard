@@ -102,7 +102,12 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
           });
       });
 
+    const pickList = ["2-0", "2-1", "1-2", "0-2"]
     pollData.answers.each(async (pollItem, id) => {
+      // 2-0
+      // 2-1
+      // 1-2
+      // 0-2
       // is user in server users list
       const voters = await pollItem.fetchVoters();
       voters.forEach(async (voterUser) => {
@@ -129,6 +134,7 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
               fields: [
                 { name: "MatchId", type: "text" },
                 { name: "DateTime_UTC", type: "text" },
+                { name: "BestOf", type: "text" },
                 { name: "Team1", type: "text" },
                 { name: "Team2", type: "text" },
                 { name: "Team1Short", type: "text" },
@@ -155,6 +161,7 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
           Team2Short: matchData.Team2Short,
           Team1Score: matchData.Team1Score,
           Team2Score: matchData.Team2Score,
+          Picked: pickList[id - 1],
           PointsRecieved: pointsList[id - 1],
         });
       });

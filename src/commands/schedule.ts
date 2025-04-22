@@ -1,11 +1,10 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { config } from "../config";
 import { DateTime } from "luxon";
 import { AsciiTable3 } from "ascii-table3";
 import { doAuth } from "../libs/common";
 
 export const data = new SlashCommandBuilder()
-  .setName("showschedule")
+  .setName("schedule")
   .setDescription("shows the cached schedule");
 
 export async function execute(interaction: CommandInteraction) {

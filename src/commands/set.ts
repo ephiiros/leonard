@@ -46,19 +46,18 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.isChatInputCommand()) return;
   const pb = await doAuth();
+  const serverData = await pb
+    .collection("servers")
+    .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
+
   switch (interaction.options.getSubcommand()) {
     case "channel":
-      // this needs to retrigger starting checks and welcome msg
       const channelID = interaction.options.get("channelid", true);
       logger.info(channelID);
       if (interaction.guild === null) return;
       if (typeof channelID.value !== "string") return;
       const channel = await interaction.guild.channels.fetch(channelID.value);
       if (channel === null) return interaction.reply("error");
-
-      const serverData = await pb
-        .collection("servers")
-        .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});
 
       await pb
         .collection(`${interaction.guildId}ActiveTimers`)
@@ -110,7 +109,29 @@ export async function execute(interaction: CommandInteraction) {
       return interaction.reply(record.leagues.toString());
     
     case "leaderboard":
-      return interaction.reply('pong')
+      // rename this 
+      const leaderboardstring = interaction.options.get("leaderboardstring", true);
+      if (typeof(leaderboardstring.value) !== 'string' ) return
+
+      await pb
+        .collection(`${interaction.guildId}Leaderboards`)
+        .getList(1, 1)
+        .catch(async () => {
+          await pb.collections.create({
+            name: `${interaction.guildId}Leaderboards`,
+            type: "base",
+            fields: [
+              { name: "String", type: "text" },
+              { name: "Data", type: "text" },
+            ],
+          });
+        });
+
+      await pb
+        .collection("servers")
+        .update(serverData.id, { leaderboard: leaderboardstring.value });
+
+      return interaction.reply(leaderboardstring.value)
     default:
       return interaction.reply("default");
   }
