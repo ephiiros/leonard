@@ -2,7 +2,7 @@ import { PollLayoutType, TextChannel } from "discord.js";
 import { DateTime } from "luxon";
 import { config } from "../config";
 import { MatchData } from "./lolFandomTypes";
-import { doAuth, logger } from "./common";
+import { doAuth, getShortMatchId, logger } from "./common";
 import { messageData } from "./cronFunc";
 
 export async function sendPoll(channel: TextChannel, gameData: MatchData) {
@@ -50,22 +50,22 @@ export async function sendPoll(channel: TextChannel, gameData: MatchData) {
   if (gameData.BestOf === "3") {
     pollData = {
       poll: {
-        question: { text: gameData.MatchId },
+        question: { text: getShortMatchId(gameData.MatchId) },
         answers: [
           {
-            text: "(" + gameData.Team1 + ")" + " [2 - 0] " + gameData.Team2,
+            text: "(" + gameData.Team1Short + ")" + " [2 - 0] " + gameData.Team2Short,
             emoji: "🟦",
           },
           {
-            text: "(" + gameData.Team1 + ")" + " [2 - 1] " + gameData.Team2,
+            text: "(" + gameData.Team1Short + ")" + " [2 - 1] " + gameData.Team2Short,
             emoji: "🟦",
           },
           {
-            text: gameData.Team1 + " [1 - 2] " + "(" + gameData.Team2 + ")",
+            text: gameData.Team1Short + " [1 - 2] " + "(" + gameData.Team2Short + ")",
             emoji: "🟥",
           },
           {
-            text: gameData.Team1 + " [0 - 2] " + "(" + gameData.Team2 + ")",
+            text: gameData.Team1Short + " [0 - 2] " + "(" + gameData.Team2Short + ")",
             emoji: "🟥",
           },
         ],

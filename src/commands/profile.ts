@@ -17,21 +17,22 @@ export const data = new SlashCommandBuilder()
   .setDescription(" all commands");
 
 export async function execute(interaction: CommandInteraction) {
-  const canvas = createCanvas(700, 250);
-  const ctx = canvas.getContext("2d");
   const pb = await doAuth();
 
+  const canvas = createCanvas(700, 250);
+  const ctx = canvas.getContext("2d");
+
+  // background
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // avatar
   const avatarImg = await loadImage(
     interaction.user.displayAvatarURL({ extension: "jpg" })
   );
-
   ctx.drawImage(avatarImg, 15, 15, 50, 50);
 
-
-
+  // check if user exists
   return pb.collection("User" + interaction.user.id).getFullList()
   .then(async (historyList) => {
     let totalPoints = 0

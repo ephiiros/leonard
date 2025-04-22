@@ -1,6 +1,6 @@
 import { Guild } from "discord.js";
 import { DateTime } from "luxon";
-import { activeTimers, doAuth } from "./common";
+import { activeTimers, doAuth, getShortMatchId } from "./common";
 import { messageData } from "./cronFunc";
 
 export async function getInfoPanel(guild: Guild) {
@@ -27,7 +27,7 @@ export async function getInfoPanel(guild: Guild) {
       if (serverData.messageIDList.length > 0) {
         serverData.messageIDList.forEach((item: messageData) => {
           activePolls +=
-            `  1. ${item.MatchData.MatchId}` +
+            `  1. ${getShortMatchId(item.MatchData.MatchId)}` +
             ` https://discord.com/channels/` +
             `${serverData.discordServerID}/` +
             `${serverData.channelID}/` +
@@ -35,10 +35,9 @@ export async function getInfoPanel(guild: Guild) {
         });
       }
       return (
-        `- Server ID: ${guild.id}\n` +
-        `- Channel ID: ${serverData.channelID}\n` +
-        `- Leagues: ${serverData.leagues}\n` +
+        `- Server ID: ${guild.id} Channel ID: ${serverData.channelID}\n` +
         `- Timers: ${activeTimers.length}\n` +
+        `- Leagues: ${serverData.leagues}\n` +
         `- Active Polls: ${activePolls}` +
         `- Next Game: ${"<t:" + nextTime + ":R>"}`
       );

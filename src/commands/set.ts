@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder, TextChannel } from "discord.js";
+import {
+  CommandInteraction,
+  SlashCommandBuilder,
+  TextChannel,
+} from "discord.js";
 import { doAuth, logger } from "../libs/common";
 import cronFunction from "../libs/cronFunc";
 
@@ -24,6 +28,17 @@ export const data = new SlashCommandBuilder()
         option
           .setName("leagueslist")
           .setDescription("leagueslist")
+          .setRequired(true)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("leaderboard")
+      .setDescription("set leaderboard")
+      .addStringOption((option) =>
+        option
+          .setName("leaderboardstring")
+          .setDescription("leaderboardstring")
           .setRequired(true)
       )
   );
@@ -85,7 +100,7 @@ export async function execute(interaction: CommandInteraction) {
         .collection("servers")
         .update(fetchRecord.id, { leagues: leagues.value });
 
-      if (interaction.guildId === null) return
+      if (interaction.guildId === null) return;
 
       cronFunction(
         interaction.guildId,
@@ -93,6 +108,9 @@ export async function execute(interaction: CommandInteraction) {
         interaction.channel as TextChannel
       );
       return interaction.reply(record.leagues.toString());
+    
+    case "leaderboard":
+      return interaction.reply('pong')
     default:
       return interaction.reply("default");
   }
