@@ -1,12 +1,18 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  AttachmentBuilder,
+  CommandInteraction,
+  SlashCommandBuilder,
+} from "discord.js";
 import { doAuth, logger } from "../libs/common";
 import { RecordModel } from "pocketbase";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
 
 export const data = new SlashCommandBuilder()
   .setName("leaderboard")
   .setDescription("leaderboard!");
 
 export async function execute(interaction: CommandInteraction) {
+  await interaction.deferReply();
   const pb = await doAuth();
   const leaderboard: any = {};
   // get the preset leaderboard string
@@ -80,21 +86,49 @@ export async function execute(interaction: CommandInteraction) {
     if (user.username.length > longestname) {
       longestname = user.username.length;
     }
-    leaderboardSorted.push({ username: user.username, score: value });
+    leaderboardSorted.push({
+      userid: user.id,
+      username: user.username,
+      score: value,
+    });
   }
   // i cba
   //@ts-ignore
   leaderboardSorted.sort((a, b) => b.score - a.score);
 
-  let counter = 1;
-  let output = "```\n";
-  output += `leaderboard: "${serverData.leaderboard}"\n`;
+  const canvas = createCanvas(400, 500);
+  const ctx = canvas.getContext("2d");
+  let offset = 50;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.font = "40px Roboto";
+  ctx.fillStyle = "#000000";
+
+  const users = await interaction.guild?.members.fetch({
+    user: leaderboardSorted.map((leaderboardItem) => leaderboardItem.userid),
+  });
+  if (users === undefined) return;
+  logger.info(JSON.stringify(users));
+
+  let counter = 1
   for (var leaderboardItem of leaderboardSorted) {
-    output += `${counter}. ${leaderboardItem.username}${".".repeat(
-      3 + longestname - leaderboardItem.username.length
-    )}${leaderboardItem.score}\n`;
-    counter += 1;
+    const user = users.find((user) => user.id === leaderboardItem.userid);
+    if (user === undefined) continue;
+
+    const avatarImg = await loadImage(
+      user.displayAvatarURL({ extension: "jpg" })
+    );
+    ctx.fillText(`${counter}.`, 5, offset);
+    ctx.drawImage(avatarImg, 45, offset - 45, 50, 50);
+    ctx.fillText(leaderboardItem.username, 100, offset);
+    ctx.fillText(leaderboardItem.score as string, 350, offset);
+    offset += 55;
+    counter += 1
   }
-  output += "```";
-  return interaction.reply(output);
+
+  const attachment = new AttachmentBuilder(canvas.toBuffer("image/png"), {
+    name: "leaderboard.png",
+  });
+  return interaction.editReply({ files: [attachment] });
 }
