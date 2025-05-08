@@ -75,7 +75,7 @@ export async function getSingleMatchData(matchId: string) {
   const response = await fetch(baseUrl + params.toString());
   const responseJson: lolFandomResponse = await response.json();
 
-  logger.info(responseJson)
+  logger.info(JSON.stringify(responseJson))
   const singleMatch = responseJson.cargoquery[0].title
   return {
     MatchId: singleMatch.MatchId,

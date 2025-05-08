@@ -2,7 +2,7 @@ import { PollLayoutType, TextChannel } from "discord.js";
 import { DateTime } from "luxon";
 import { config } from "../config";
 import { MatchData } from "./lolFandomTypes";
-import { doAuth, getShortMatchId, logger } from "./common";
+import { createBo3Poll, createBo5Poll, doAuth, getShortMatchId, logger } from "./common";
 import { messageData } from "./cronFunc";
 
 export async function sendPoll(channel: TextChannel, gameData: MatchData) {
@@ -48,68 +48,10 @@ export async function sendPoll(channel: TextChannel, gameData: MatchData) {
     },
   };
   if (gameData.BestOf === "3") {
-    pollData = {
-      poll: {
-        question: { text: getShortMatchId(gameData.MatchId) },
-        answers: [
-          {
-            text: "(" + gameData.Team1Short + ")" + " [2 - 0] " + gameData.Team2Short,
-            emoji: "🟦",
-          },
-          {
-            text: "(" + gameData.Team1Short + ")" + " [2 - 1] " + gameData.Team2Short,
-            emoji: "🟦",
-          },
-          {
-            text: gameData.Team1Short + " [1 - 2] " + "(" + gameData.Team2Short + ")",
-            emoji: "🟥",
-          },
-          {
-            text: gameData.Team1Short + " [0 - 2] " + "(" + gameData.Team2Short + ")",
-            emoji: "🟥",
-          },
-        ],
-        allowMultiselect: false,
-        duration: pollDelay,
-        layoutType: PollLayoutType.Default,
-      },
-    };
+    pollData = createBo3Poll(gameData, pollDelay)
   }
   if (gameData.BestOf === "5") {
-    pollData = {
-      poll: {
-        question: { text: "Who wins?" },
-        answers: [
-          {
-            text: gameData.Team1 + "3 - 0" + gameData.Team2,
-            emoji: "",
-          },
-          {
-            text: gameData.Team1 + "3 - 1" + gameData.Team2,
-            emoji: "",
-          },
-          {
-            text: gameData.Team1 + "3 - 2" + gameData.Team2,
-            emoji: "",
-          },
-          {
-            text: gameData.Team1 + "2 - 3" + gameData.Team2,
-            emoji: "",
-          },
-          {
-            text: gameData.Team1 + "1 - 3" + gameData.Team2,
-            emoji: "",
-          },
-          {
-            text: gameData.Team1 + "0 - 3" + gameData.Team2,
-            emoji: "",
-          },
-        ],
-        allowMultiselect: false,
-        duration: pollDelay,
-        layoutType: PollLayoutType.Default,
-      },
-    };
+    pollData = createBo5Poll(gameData, pollDelay)
   }
   const sentPoll = await channel.send(pollData);
 
