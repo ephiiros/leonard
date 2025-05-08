@@ -1,12 +1,20 @@
 import { config } from "../config";
 import PocketBase from "pocketbase";
-import pino from "pino";
+import pino, { destination } from "pino";
 export const logger = pino({
   transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-    },
+    targets: [
+      {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+        },
+      },
+      {
+        target: "pino/file",
+        options: { destination: `${__dirname}/../../logs/app.log`}
+      }
+    ]
   },
 });
 
