@@ -58,8 +58,8 @@ export async function cacheScheduleLib(guild: Guild) {
 
 
         if (delayToGame !== undefined) {
-          const myNewTimer = setTimeout(() => {
-            sendPoll(channelResult, {
+          const myNewTimer = setTimeout(async () => {
+            await sendPoll(channelResult, {
               MatchId: item.MatchId,
               DateTime_UTC: item.DateTime_UTC,
               BestOf: item.BestOf,

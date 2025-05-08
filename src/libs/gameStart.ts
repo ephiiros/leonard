@@ -6,7 +6,7 @@ import { doAuth, getShortMatchId, logger } from "./common";
 import { messageData } from "./cronFunc";
 
 export async function sendPoll(channel: TextChannel, gameData: MatchData) {
-  logger.info(`sendPoll(${channel.id}, ${gameData}`)
+  logger.info(`sendPoll(${channel.id}, ${JSON.stringify(gameData)}`)
   const pb = await doAuth()
   const serverData = await pb
     .collection("servers")

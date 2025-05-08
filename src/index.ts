@@ -102,7 +102,7 @@ client.once("ready", async () => {
       await cronFunction(serverID, client, channel);
 
       new CronJob(
-        "0 */5 * * * *",
+        "0 * */30 * * *",
         function () {
           cronFunction(serverID, client, channel);
         }, // onTick
