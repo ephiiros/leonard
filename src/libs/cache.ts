@@ -76,7 +76,7 @@ export async function cacheScheduleLib(guild: Guild) {
         }
       });
     }
-    await cacheBatch.send({ requestKey: null });
+    await cacheBatch.send({ requestKey: null }).catch((e) => logger.warn(e));
     logger.info(`[${guild.id}] Cached "${league}"`)
   }
 }
