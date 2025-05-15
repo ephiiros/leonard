@@ -1,4 +1,4 @@
-import { ChannelType, Client, TextChannel } from "discord.js";
+import { ChannelType, Client, NewsChannel, TextChannel } from "discord.js";
 import { config } from "./config";
 import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
@@ -28,12 +28,13 @@ client.once("ready", async () => {
           name: "servers",
           type: "base",
           fields: [
-            { name: "discordServerID", type: "text" },
+            { name: "discordServerID", type: "text", required: true },
             { name: "channelID", type: "text" },
-            { name: "leaderboard", type: "text"},
+            { name: "leaderboard", type: "text" },
             { name: "messageIDList", type: "json" },
             { name: "leagues", type: "json" },
           ],
+          indexes: ["discordServerID"],
         },
         { requestKey: null }
       );
@@ -59,16 +60,50 @@ client.once("ready", async () => {
   const newServers = botGuildIdSet.difference(pbServerIdSet);
   const serverBatch = pb.createBatch();
   if (newServers.size > 0) {
-    newServers.forEach((serverID) => {
+    for (var serverID of newServers) {
       logger.warn(`UNNACOUNTED SERVER ${serverID}`);
       serverBatch.collection("servers").create({
         discordServerID: serverID,
-        channelID: "null",
-        leaderboard: "null",
+        channelID: "",
+        leaderboard: "",
         messageIDList: [],
         leagues: [],
       });
-    });
+
+      await pb.collections.create({
+        name: `${serverID}ActiveTimers`,
+        type: "base",
+        fields: [
+          { name: "MatchId", type: "text" },
+          { name: "DateTime_UTC", type: "text" },
+          { name: "BestOf", type: "text" },
+          { name: "Team1", type: "text" },
+          { name: "Team2", type: "text" },
+          { name: "Team1Short", type: "text" },
+          { name: "Team2Short", type: "text" },
+        ],
+      });
+
+      await pb.collections.create({
+        name: `${serverID}Users`,
+        type: "base",
+        fields: [
+          { name: "discordUserID", type: "text" },
+          { name: "username", type: "text" },
+        ],
+        indexes: [
+          "CREATE UNIQUE INDEX `discordUserID` ON `" +
+            serverID +
+            "Users` (`discordUserID`)",
+        ],
+      });
+
+      await pb.collections.create({
+        name: `${serverID}Leaderboards`,
+        type: "base",
+        fields: [{ name: "LeaderboardString", type: "text" }],
+      });
+    }
   }
   await serverBatch.send().catch(() => logger.info("All servers good"));
 
