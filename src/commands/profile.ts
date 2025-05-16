@@ -46,23 +46,28 @@ export async function execute(interaction: CommandInteraction) {
   return pb
     .collection("User" + interaction.user.id)
     .getFullList({
-      sort: "-DateTime_UTC"
+      expand: "MatchDetails",
+      sort: "-MatchDetails.DateTime_UTC"
     })
     .then(async (historyList) => {
-      logger.info(`${JSON.stringify(historyList)}`);
+      // logger.info(`${JSON.stringify(historyList)}`);
       let totalPoints = 0;
       let totalWins = 0;
       let totalScoreWins = 0;
       let maxWins = 0;
       let blobOffset = 20
       for (var historyItem of historyList) {
+        // @ts-ignore
+        let matchDetails = historyItem.expand.MatchDetails
+        logger.info(historyItem)
+        logger.info(matchDetails)
         totalPoints += parseInt(historyItem.PointsRecieved);
         if (historyItem.PointsRecieved !== "0") {
           totalWins += 1;
         }
         if (
           historyItem.Picked ===
-          historyItem.Team1Score + "-" + historyItem.Team2Score
+          matchDetails.Team1Score + "-" + matchDetails.Team2Score
         ) {
           totalScoreWins += 1;
         }
@@ -70,7 +75,7 @@ export async function execute(interaction: CommandInteraction) {
 
         if (
           historyItem.Picked ===
-          historyItem.Team1Score + "-" + historyItem.Team2Score
+          matchDetails.Team1Score + "-" + matchDetails.Team2Score
         ) {
           //green
           ctx.fillStyle = "#64e3a1";

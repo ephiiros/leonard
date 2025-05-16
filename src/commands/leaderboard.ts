@@ -54,6 +54,7 @@ export async function execute(interaction: CommandInteraction) {
     output += "```";
     return interaction.reply(output);
   }
+  logger.info(serverData.leaderboard)
 
   await pb
     .collection(`${interaction.guildId}Users`)
@@ -64,11 +65,13 @@ export async function execute(interaction: CommandInteraction) {
         await pb
           .collection(`User${userItem.discordUserID}`)
           .getFullList({
-            filter: `MatchId~'${serverData.leaderboard}'`,
+            expand: "MatchDetails",
+            filter: `MatchDetails.MatchId~'${serverData.leaderboard}'`,
           })
           .then((historyList) => {
             for (var historyItem of historyList) {
-              if (historyItem.MatchId)
+              //@ts-ignore
+              if (historyItem.expand.MatchDetails.MatchId)
                 leaderboard[userItem.discordUserID] += parseInt(
                   historyItem.PointsRecieved
                 );
@@ -78,7 +81,7 @@ export async function execute(interaction: CommandInteraction) {
     })
     .catch((e) => {
       logger.error(e);
-    });
+    }).then((res) => {logger.info(res)});
   let leaderboardSorted = [];
   let longestname = 0;
   for (const [key, value] of Object.entries(leaderboard)) {

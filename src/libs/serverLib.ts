@@ -1,13 +1,12 @@
 import { Poll } from "discord.js";
 import { MatchData } from "./lolFandomTypes";
 import { doAuth, logger } from "./common";
-import { DateTime } from "luxon";
 
 export async function addPoints(matchData: MatchData, pollData: Poll) {
   logger.info(`addPoints ${matchData.MatchId}`);
   const pb = await doAuth();
 
-  await pb.collection("matches")
+  const currentMatch = await pb.collection("matches")
     .create({
       MatchId: matchData.MatchId,
       DateTime_UTC:
@@ -50,14 +49,17 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
             type: "base",
             fields: [
               { name: "MatchDetails", type: "relation" },
+              { name: "Picked", type: "text" },
               { name: "PointsRecieved", type: "text" },
             ],
           });
         });
 
     if (matchData.BestOf === "1") {
+      const pickList = ["1-0", "0-1"]
       await pb.collection(`User${voterUser.id}`).create({
-        MatchId: matchData.MatchId,
+        MatchDetails: currentMatch.id,
+        Picked: pickList[id - 1],
         PointsRecieved: 1,
       });
     }
@@ -81,7 +83,7 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
       const pickList = ["2-0", "2-1", "1-2", "0-2"];
 
       await pb.collection(`User${voterUser.id}`).create({
-        MatchDetails
+        MatchDetails: currentMatch.id,
         Picked: pickList[id - 1],
         PointsRecieved: pointsList[id - 1],
       });
@@ -112,10 +114,10 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
       const pickList = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"];
 
       await pb.collection(`User${voterUser.id}`).create({
-        MatchDetails
+        MatchDetails: currentMatch.id,
         Picked: pickList[id - 1],
         PointsRecieved: pointsList[id - 1],
       });
     }
-  }
-}
+  })
+})}
