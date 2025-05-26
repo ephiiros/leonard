@@ -15,8 +15,6 @@ export async function execute(interaction: CommandInteraction) {
   await interaction.deferReply();
   const pb = await doAuth();
   const leaderboard: any = {};
-  // get the preset leaderboard string
-  // pb serverData
   // pb.collection(`${serverid}Leaderboards)
   // check if item like leaderboardstring exists
   // check if leaderboard is valid
@@ -24,23 +22,21 @@ export async function execute(interaction: CommandInteraction) {
   const serverData = await pb
     .collection(`servers`)
     .getFirstListItem(`discordServerID='${interaction.guildId}'`);
+  
+  logger.info(interaction.guildId)
 
   const cache: RecordModel | "INVALID" = await pb
     .collection(`${interaction.guildId}Leaderboards`)
-    .getFirstListItem(`leaderboardString='${serverData.leaderboard}'`)
+    .getFirstListItem(`LeaderboardString='${serverData.leaderboard}'`)
     .then((cacheData) => {
-      // has cache,
-      // could be invalid
-      if (cacheData.valid === true) {
-        return cacheData;
-      } else {
-        return "INVALID";
-      }
+      return cacheData.LeaderboardString;
     })
     .catch(() => {
       // doesnt have cache
       return "INVALID";
     });
+
+  logger.info(cache);
 
   if (cache !== "INVALID") {
     // leaderboard will be stored in the form of sorted list of jsons
@@ -54,7 +50,6 @@ export async function execute(interaction: CommandInteraction) {
     output += "```";
     return interaction.reply(output);
   }
-  logger.info(serverData.leaderboard)
 
   await pb
     .collection(`${interaction.guildId}Users`)
@@ -81,7 +76,10 @@ export async function execute(interaction: CommandInteraction) {
     })
     .catch((e) => {
       logger.error(e);
-    }).then((res) => {logger.info(res)});
+    })
+    .then((res) => {
+      logger.info(res);
+    });
   let leaderboardSorted = [];
   let longestname = 0;
   for (const [key, value] of Object.entries(leaderboard)) {
@@ -101,12 +99,13 @@ export async function execute(interaction: CommandInteraction) {
 
   const canvas = createCanvas(400, 500);
   const ctx = canvas.getContext("2d");
-  let offset = 50;
+  let offset = 100;
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.font = "40px Roboto";
   ctx.fillStyle = "#000000";
+  ctx.fillText(serverData.leaderboard, 0, 50);
 
   const users = await interaction.guild?.members.fetch({
     user: leaderboardSorted.map((leaderboardItem) => leaderboardItem.userid),
@@ -114,7 +113,7 @@ export async function execute(interaction: CommandInteraction) {
   if (users === undefined) return;
   logger.info(JSON.stringify(users));
 
-  let counter = 1
+  let counter = 1;
   for (var leaderboardItem of leaderboardSorted) {
     const user = users.find((user) => user.id === leaderboardItem.userid);
     if (user === undefined) continue;
@@ -127,11 +126,18 @@ export async function execute(interaction: CommandInteraction) {
     ctx.fillText(leaderboardItem.username, 100, offset);
     ctx.fillText(leaderboardItem.score as string, 350, offset);
     offset += 55;
-    counter += 1
+    counter += 1;
   }
 
   const attachment = new AttachmentBuilder(canvas.toBuffer("image/png"), {
     name: "leaderboard.png",
   });
+
+  await pb.collection(`${interaction.guildId}Leaderboards`).create(
+    {
+      LeaderboardString: serverData.leaderboard,
+      Leaderboard: leaderboardSorted
+    }
+  )
   return interaction.editReply({ files: [attachment] });
 }

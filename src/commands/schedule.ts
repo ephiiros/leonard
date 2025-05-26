@@ -1,7 +1,7 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { DateTime } from "luxon";
 import { AsciiTable3 } from "ascii-table3";
-import { doAuth } from "../libs/common";
+import { doAuth, logger } from "../libs/common";
 
 export const data = new SlashCommandBuilder()
   .setName("schedule")
@@ -15,7 +15,7 @@ export async function execute(interaction: CommandInteraction) {
     .getList(1, 50, {});
 
   let output = "```\n";
-  const table = new AsciiTable3("Saved Timers").setHeading(
+  const table = new AsciiTable3("Upcoming tracked games").setHeading(
     "Time (UTC)",
     "Team1",
     "Team2",

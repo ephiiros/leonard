@@ -1,7 +1,7 @@
 import { Client, TextChannel } from "discord.js";
 import { cacheScheduleLib } from "./cache";
 import { getSingleMatchData } from "./lolFandom";
-import { addPoints } from "./serverLib";
+import { addPoints } from "./api";
 import { doAuth, logger } from "./common";
 import { MatchData } from "./lolFandomTypes";
 

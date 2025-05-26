@@ -101,7 +101,10 @@ client.once("ready", async () => {
       await pb.collections.create({
         name: `${serverID}Leaderboards`,
         type: "base",
-        fields: [{ name: "LeaderboardString", type: "text" }],
+        fields: [
+          { name: "LeaderboardString", type: "text" },
+          { name: "Leaderboard", type: "json" },
+        ],
       });
     }
   }
