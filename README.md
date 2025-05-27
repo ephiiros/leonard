@@ -2,6 +2,7 @@
   <a href="https://github.com/ephiiros/leonard">
     <img src="images/leonard.jpg" alt="Logo" width="80" height="80">
   </a>
+  <br>
 
   <img src="https://img.shields.io/github/contributors/ephiiros/leonard">
   <img src="https://img.shields.io/github/stars/ephiiros/leonard">
