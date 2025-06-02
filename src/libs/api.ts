@@ -8,23 +8,26 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
 
   const currentMatch = await pb
     .collection("matches")
-    .getFirstListItem(`MatchId=${matchData.MatchId}`)
-    .catch(async () => {
-      return await pb.collection("matches").create({
-        MatchId: matchData.MatchId,
-        DateTime_UTC:
-          typeof matchData.DateTime_UTC === "string"
-            ? matchData.DateTime_UTC
-            : matchData.DateTime_UTC.toISO(),
-        BestOf: matchData.BestOf,
-        Winner: matchData.Winner,
-        Team1: matchData.Team1,
-        Team2: matchData.Team2,
-        Team1Short: matchData.Team1Short,
-        Team2Short: matchData.Team2Short,
-        Team1Score: matchData.Team1Score,
-        Team2Score: matchData.Team2Score,
-      });
+    .create({
+      MatchId: matchData.MatchId,
+      DateTime_UTC:
+        typeof matchData.DateTime_UTC === "string"
+          ? matchData.DateTime_UTC
+          : matchData.DateTime_UTC.toISO(),
+      BestOf: matchData.BestOf,
+      Winner: matchData.Winner,
+      Team1: matchData.Team1,
+      Team2: matchData.Team2,
+      Team1Short: matchData.Team1Short,
+      Team2Short: matchData.Team2Short,
+      Team1Score: matchData.Team1Score,
+      Team2Score: matchData.Team2Score,
+    })
+    .catch(async (e) => {
+      logger.warn(`attempt to create failed, fetching ${e}`);
+      return await pb
+        .collection("matches")
+        .getFirstListItem(`MatchId=${matchData.MatchId}`)
     });
 
   pollData.answers.each(async (pollItem, id) => {
