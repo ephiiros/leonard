@@ -31,15 +31,15 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
     // is user in server users list
     const voters = await pollItem.fetchVoters();
     voters.forEach(async (voterUser) => {
+      logger.info(`creating user ${voterUser.id} as test`);
       await pb
         .collection(`${pollData.message.guildId}Users`)
-        .getFirstListItem(`discordUserID=${voterUser.id}`)
-        .catch(async () => {
-          // user is not in users list of server
-          await pb.collection(`${pollData.message.guildId}Users`).create({
-            discordUserID: voterUser.id,
-            username: voterUser.username,
-          });
+        .create({
+          discordUserID: voterUser.id,
+          username: voterUser.username,
+        })
+        .catch((e) => {
+          logger.warn(`failed to create user ${e}`);
         });
       // user guaranteed in server
 
