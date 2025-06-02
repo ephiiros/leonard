@@ -24,7 +24,9 @@ export async function execute(interaction: CommandInteraction) {
   // check if user exists
   return pb
     .collection("User" + interaction.user.id)
-    .getFullList({ sort: "-DateTime_UTC" })
+    .getFullList({ 
+      expand: "MatchDetails",
+      sort: "-MatchDetails.DateTime_UTC" })
     .then(async (historyList) => {
       let offset = 70;
       logger.info(`${JSON.stringify(historyList)}`);
@@ -52,12 +54,14 @@ export async function execute(interaction: CommandInteraction) {
 
       for (var historyItem of historyList) {
 
+        //@ts-ignore
+        let matchDetails = historyItem.expand.MatchDetails
         // item bg
         if (historyItem.PointsRecieved === "0") {
           ctx.fillStyle = "#ff7f7f";
         } else if (
           historyItem.Picked ===
-          historyItem.Team1Score + "-" + historyItem.Team2Score
+          matchDetails.Team1Score + "-" + matchDetails.Team2Score
         ) {
           ctx.fillStyle = "#64e3a1";
         } else {
@@ -76,21 +80,21 @@ export async function execute(interaction: CommandInteraction) {
 
         // match id
         ctx.fillStyle = "#000000";
-        ctx.fillText(`${getShortMatchId(historyItem.MatchId)}`, 30, offset);
+        ctx.fillText(`${getShortMatchId(matchDetails.MatchId)}`, 30, offset);
 
         // datetime
-        const date = DateTime.fromISO(historyItem.DateTime_UTC);
+        const date = DateTime.fromISO(matchDetails.DateTime_UTC);
         if (date) {
           ctx.fillText(`${date.toFormat("dd/MM HH:mm")}`, 220, offset);
         }
 
         // teams
-        ctx.fillText(`${historyItem.Team1Short} `, 335, offset);
-        ctx.fillText(`${historyItem.Team2Short} `, 395, offset);
+        ctx.fillText(`${matchDetails.Team1Short} `, 335, offset);
+        ctx.fillText(`${matchDetails.Team2Short} `, 395, offset);
 
         // score
         ctx.fillText(
-          `${historyItem.Team1Score} - ${historyItem.Team2Score}`,
+          `${matchDetails.Team1Score} - ${matchDetails.Team2Score}`,
           455,
           offset
         );
