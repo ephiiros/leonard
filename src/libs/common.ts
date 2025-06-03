@@ -85,27 +85,27 @@ export function createBo5Poll(gameData: MatchData, pollDelay: number) {
         question: { text: getShortMatchId(gameData.MatchId) },
         answers: [
           {
-            text: gameData.Team1 + "WINS 3 - 0",
+            text: gameData.Team1 + " WINS 3 - 0",
             emoji: "🟦",
           },
           {
-            text: gameData.Team1 + "WINS 3 - 1",
+            text: gameData.Team1 + " WINS 3 - 1",
             emoji: "🟦",
           },
           {
-            text: gameData.Team1 + "WINS 3 - 2",
+            text: gameData.Team1 + " WINS 3 - 2",
             emoji: "🟦",
           },
           {
-            text: gameData.Team2 + "WINS 2 - 3",
+            text: gameData.Team2 + " WINS 2 - 3",
             emoji: "🟥",
           },
           {
-            text: gameData.Team2 + "WINS 1 - 3",
+            text: gameData.Team2 + " WINS 1 - 3",
             emoji: "🟥",
           },
           {
-            text: gameData.Team2 + "WINS 0 - 3",
+            text: gameData.Team2 + " WINS 0 - 3",
             emoji: "🟥",
           },
         ],
