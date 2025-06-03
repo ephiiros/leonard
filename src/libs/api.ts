@@ -27,7 +27,7 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
       logger.warn(`attempt to create failed, fetching ${e}`);
       return await pb
         .collection("matches")
-        .getFirstListItem(`MatchId=${matchData.MatchId}`)
+        .getFirstListItem(`MatchId="${matchData.MatchId}"`)
     });
 
   pollData.answers.each(async (pollItem, id) => {
