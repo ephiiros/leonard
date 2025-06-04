@@ -1,11 +1,12 @@
-import { Canvas, createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import {
   AttachmentBuilder,
   CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import { doAuth, getShortMatchId, logger } from "../libs/common";
+import { logger } from "../libs/common";
 import { join } from "path";
+import { getSuperuser } from "../api/database/getSuperuser";
 
 GlobalFonts.registerFromPath(
   join(__dirname, "..", "libs", "Roboto-Medium.ttf"),
@@ -17,7 +18,7 @@ export const data = new SlashCommandBuilder()
   .setDescription(" all commands");
 
 export async function execute(interaction: CommandInteraction) {
-  const pb = await doAuth();
+  const pb = await getSuperuser();
 
   const canvas = createCanvas(300, 500);
   const ctx = canvas.getContext("2d");

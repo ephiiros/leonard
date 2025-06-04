@@ -1,5 +1,5 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { getInfoPanel } from "../libs/common"
+import { getInfoPanel } from "../libs/getInfoPanel";
 
 export const data = new SlashCommandBuilder()
   .setName("info")

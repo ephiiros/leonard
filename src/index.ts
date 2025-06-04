@@ -4,7 +4,7 @@ import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
 import { DateTime } from "luxon";
 import { CronJob } from "cron";
-import cronFunction from "./libs/cronFunc";
+import cronFunction from "./libs/cronFunction";
 import { authpb, doAuth, logger } from "./libs/common";
 
 const client = new Client({

@@ -1,13 +1,16 @@
 import { PollLayoutType, TextChannel } from "discord.js";
 import { DateTime } from "luxon";
-import { config } from "../config";
-import { MatchData } from "./lolFandomTypes";
-import { createBo3Poll, createBo5Poll, doAuth, getShortMatchId, logger } from "./common";
-import { messageData } from "./cronFunc";
+import { config } from "../../config";
+import { MatchData } from "../../types/lolFandomTypes";
+import { logger } from "../../libs/common";
+import { messageData } from "../../types/messageData";
+import { getSuperuser } from "../../api/database/getSuperuser";
+import { createBo3Poll } from "../../libs/createBo3Poll";
+import { createBo5Poll } from "../../libs/createBo5Poll";
 
 export async function sendPoll(channel: TextChannel, gameData: MatchData) {
   logger.info(`sendPoll(${channel.id}, ${JSON.stringify(gameData)}`)
-  const pb = await doAuth()
+  const pb = await getSuperuser()
   const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID='${channel.guildId}'`, {

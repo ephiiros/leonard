@@ -1,14 +1,10 @@
 import { Client, TextChannel } from "discord.js";
-import { cacheScheduleLib } from "./cache";
-import { getSingleMatchData } from "./lolFandom";
-import { addPoints } from "./api";
-import { doAuth, logger } from "./common";
-import { MatchData } from "./lolFandomTypes";
-
-export type messageData = {
-  messageID: string;
-  MatchData: MatchData;
-};
+import { cacheScheduleLib } from "../api/database/cacheScheduleLib";
+import { getSingleMatchData } from "../api/lolFandom/getSingleMatchData";
+import { addPoints } from "../api/database/addPoints";
+import { logger } from "./common";
+import { getSuperuser } from "../api/database/getSuperuser";
+import { messageData } from "../types/messageData";
 
 export default async function cronFunction(
   guildId: string,
@@ -19,7 +15,7 @@ export default async function cronFunction(
   // check all active timers games
   const guild = await client.guilds.fetch(guildId)
   await cacheScheduleLib(guild);
-  const pb = await doAuth();
+  const pb = await getSuperuser();
   pb.collection("servers")
     .getFirstListItem(`discordServerID='${guildId}'`)
     .then((serverDataCron) => {

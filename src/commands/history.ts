@@ -3,16 +3,17 @@ import {
   CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import { doAuth, getShortMatchId, logger } from "../libs/common";
+import { getShortMatchId, logger } from "../libs/common";
 import { createCanvas } from "@napi-rs/canvas";
 import { DateTime } from "luxon";
+import { getSuperuser } from "../api/database/getSuperuser";
 
 export const data = new SlashCommandBuilder()
   .setName("history")
   .setDescription("history");
 
 export async function execute(interaction: CommandInteraction) {
-  const pb = await doAuth();
+  const pb = await getSuperuser();
 
   const canvas = createCanvas(620, 250);
   const ctx = canvas.getContext("2d");

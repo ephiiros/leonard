@@ -1,7 +1,8 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { DateTime } from "luxon";
 import { AsciiTable3 } from "ascii-table3";
-import { doAuth, logger } from "../libs/common";
+import { logger } from "../libs/common";
+import { getSuperuser } from "../api/database/getSuperuser";
 
 export const data = new SlashCommandBuilder()
   .setName("schedule")
@@ -9,7 +10,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   if (interaction.guildId === null) return;
-  const pb = await doAuth()
+  const pb = await getSuperuser()
   const result = await pb
     .collection(`${interaction.guildId}ActiveTimers`)
     .getList(1, 50, {});

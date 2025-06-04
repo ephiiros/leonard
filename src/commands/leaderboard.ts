@@ -3,9 +3,10 @@ import {
   CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import { doAuth, logger } from "../libs/common";
+import { logger } from "../libs/common";
 import { RecordModel } from "pocketbase";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { getSuperuser } from "../api/database/getSuperuser";
 
 export const data = new SlashCommandBuilder()
   .setName("leaderboard")
@@ -13,7 +14,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   await interaction.deferReply();
-  const pb = await doAuth();
+  const pb = await getSuperuser();
   const leaderboard: any = {};
   // pb.collection(`${serverid}Leaderboards)
   // check if item like leaderboardstring exists

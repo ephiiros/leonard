@@ -3,8 +3,9 @@ import {
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
-import { doAuth, logger } from "../libs/common";
-import cronFunction from "../libs/cronFunc";
+import { logger } from "../libs/common";
+import cronFunction from "../libs/cronFunction";
+import { getSuperuser } from "../api/database/getSuperuser";
 
 export const data = new SlashCommandBuilder()
   .setName("set")
@@ -45,7 +46,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.isChatInputCommand()) return;
-  const pb = await doAuth();
+  const pb = await getSuperuser();
   const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID="${interaction.guildId}"`, {});

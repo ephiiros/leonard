@@ -1,10 +1,11 @@
 import { Poll } from "discord.js";
-import { MatchData } from "./lolFandomTypes";
-import { doAuth, logger } from "./common";
+import { MatchData } from "../../types/lolFandomTypes";
+import { logger } from "../../libs/common";
+import { getSuperuser } from "./getSuperuser";
 
 export async function addPoints(matchData: MatchData, pollData: Poll) {
   logger.info(`addPoints ${matchData.MatchId}`);
-  const pb = await doAuth();
+  const pb = await getSuperuser();
 
   const currentMatch = await pb
     .collection("matches")

@@ -1,14 +1,15 @@
 import { ChannelType, Guild } from "discord.js";
-import { getFutureLeagueGames } from "../libs/lolFandom";
-import { config } from "../config";
-import { activeTimers, doAuth } from "../libs/common";
+import { getFutureLeagueGames } from "../../api/lolFandom/getFutureLeagueGames";
+import { config } from "../../config";
+import { activeTimers } from "../../libs/common";
 import { DateTime } from "luxon";
-import { sendPoll } from "../libs/gameStart";
-import { logger } from "./common";
+import { sendPoll } from "../../api/discord/sendPoll";
+import { logger } from "../../libs/common";
+import { getSuperuser } from "../../api/database/getSuperuser";
 
 export async function cacheScheduleLib(guild: Guild) {
   const guildId = guild.id;
-  const pb = await doAuth()
+  const pb = await getSuperuser();
   const serverData = await pb
     .collection("servers")
     .getFirstListItem(`discordServerID='${guildId}'`);
@@ -51,11 +52,10 @@ export async function cacheScheduleLib(guild: Guild) {
           Team1: item.Team1,
           Team2: item.Team2,
           Team1Short: item.Team1Short,
-          Team2Short: item.Team2Short
+          Team2Short: item.Team2Short,
         });
         const delayToGame = item.DateTime_UTC.diff(DateTime.utc()).toObject()
           .milliseconds;
-
 
         if (delayToGame !== undefined) {
           const myNewTimer = setTimeout(async () => {
@@ -69,7 +69,7 @@ export async function cacheScheduleLib(guild: Guild) {
               Team1Short: item.Team1Short,
               Team2Short: item.Team2Short,
               Team1Score: item.Team1Score,
-              Team2Score: item.Team2Score
+              Team2Score: item.Team2Score,
             });
           }, Math.max(0, delayToGame - parseInt(config.VOTE_OFFSET) * 3600000));
           activeTimers.push(myNewTimer);
@@ -77,6 +77,6 @@ export async function cacheScheduleLib(guild: Guild) {
       });
     }
     await cacheBatch.send({ requestKey: null }).catch((e) => logger.warn(e));
-    logger.info(`[${guild.id}] Cached "${league}"`)
+    logger.info(`[${guild.id}] Cached "${league}"`);
   }
 }
