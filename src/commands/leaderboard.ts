@@ -44,6 +44,7 @@ export async function execute(interaction: CommandInteraction) {
     let counter = 1;
     let output = "```\n";
     output += `leaderboard: "${serverData.leaderboard}"\n`;
+    logger.info(cache.Leaderboard)
     for (var item of cache.Leaderboard) {
       output += `${counter}. ${item.username}${".".repeat(3)}${item.score}\n`;
       counter += 1;
