@@ -5,7 +5,8 @@ import { deployCommands } from "./deploy-commands";
 import { DateTime } from "luxon";
 import { CronJob } from "cron";
 import cronFunction from "./libs/cronFunction";
-import { authpb, doAuth, logger } from "./libs/common";
+import { logger } from "./libs/common";
+import { getSuperuser } from "./api/database/getSuperuser";
 
 const client = new Client({
   intents: ["Guilds", "GuildMessages", "DirectMessages"],
@@ -13,11 +14,10 @@ const client = new Client({
 
 client.once("ready", async () => {
   logger.info("Client Ready");
-  const pb = await doAuth();
-  if (authpb === null) return;
+  const pb = await getSuperuser();
 
   // check server list exists
-  await authpb
+  await pb
     .collection("servers")
     .getList(1, 1)
     .catch(async () => {
@@ -154,7 +154,7 @@ client.once("ready", async () => {
 
 client.on("guildCreate", async (guild) => {
   await deployCommands({ guildId: guild.id });
-  const pb = await doAuth();
+  const pb = await getSuperuser();
   const records = await pb.collection("users").getFullList({
     sort: "id",
   });
