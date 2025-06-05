@@ -14,5 +14,6 @@ export async function getSuperuser() {
     pb.autoCancellation(false);
     authpb = pb;
   }
+  logger.info(authpb)
   return authpb;
 }
