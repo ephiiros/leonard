@@ -5,20 +5,29 @@ import {
 } from "discord.js";
 import { logger } from "../libs/common";
 import { RecordModel } from "pocketbase";
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { getSuperuser } from "../api/database/getSuperuser";
+import { join } from "path"
+
+GlobalFonts.registerFromPath(
+  join(__dirname, "..", "libs", "Roboto-Medium.ttf"),
+  "Roboto Medium"
+);
+
+GlobalFonts.registerFromPath(
+  join(__dirname, "..", "..", "assets", "fonts", "Minecraftia-Regular.ttf"),
+  "Minecraft"
+);
+
+console.log(GlobalFonts.families)
 
 export const data = new SlashCommandBuilder()
   .setName("leaderboard")
   .setDescription("leaderboard!");
 
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply();
   const pb = await getSuperuser();
   const leaderboard: any = {};
-  // pb.collection(`${serverid}Leaderboards)
-  // check if item like leaderboardstring exists
-  // check if leaderboard is valid
 
   const serverData = await pb
     .collection(`servers`)
@@ -30,84 +39,78 @@ export async function execute(interaction: CommandInteraction) {
     .collection(`${interaction.guildId}Leaderboards`)
     .getFirstListItem(`LeaderboardString='${serverData.leaderboard}'`)
     .then((cacheData) => {
-      return cacheData.LeaderboardString;
+      return cacheData;
     })
     .catch(() => {
       // doesnt have cache
       return "INVALID";
     });
 
-  logger.info(cache);
+  let leaderboardSorted: any[] = []
+  await interaction.deferReply();
 
   if (cache !== "INVALID") {
     // leaderboard will be stored in the form of sorted list of jsons
-    let counter = 1;
-    let output = "```\n";
-    output += `leaderboard: "${serverData.leaderboard}"\n`;
-    logger.info(cache.Leaderboard)
-    for (var item of cache.Leaderboard) {
-      output += `${counter}. ${item.username}${".".repeat(3)}${item.score}\n`;
-      counter += 1;
-    }
-    output += "```";
-    return interaction.reply(output);
-  }
-
-  await pb
-    .collection(`${interaction.guildId}Users`)
-    .getFullList()
-    .then(async (userList) => {
-      for (var userItem of userList) {
-        leaderboard[userItem.discordUserID] = 0;
-        await pb
-          .collection(`User${userItem.discordUserID}`)
-          .getFullList({
-            expand: "MatchDetails",
-            filter: `MatchDetails.MatchId~'${serverData.leaderboard}'`,
-          })
-          .then((historyList) => {
-            for (var historyItem of historyList) {
-              //@ts-ignore
-              if (historyItem.expand.MatchDetails.MatchId)
-                leaderboard[userItem.discordUserID] += parseInt(
-                  historyItem.PointsRecieved
-                );
-            }
-          });
+    leaderboardSorted = cache.Leaderboard
+  } else {
+    await pb
+      .collection(`${interaction.guildId}Users`)
+      .getFullList()
+      .then(async (userList) => {
+        for (var userItem of userList) {
+          leaderboard[userItem.discordUserID] = 0;
+          await pb
+            .collection(`User${userItem.discordUserID}`)
+            .getFullList({
+              expand: "MatchDetails",
+              filter: `MatchDetails.MatchId~'${serverData.leaderboard}'`,
+            })
+            .then((historyList) => {
+              for (var historyItem of historyList) {
+                //@ts-ignore
+                if (historyItem.expand.MatchDetails.MatchId)
+                  leaderboard[userItem.discordUserID] += parseInt(
+                    historyItem.PointsRecieved
+                  );
+              }
+            });
+        }
+      })
+      .catch((e) => {
+        logger.error(e);
+      })
+      .then((res) => {
+        logger.info(res);
+      });
+    let longestname = 0;
+    for (const [key, value] of Object.entries(leaderboard)) {
+      const user = await interaction.client.users.fetch(key);
+      if (user.username.length > longestname) {
+        longestname = user.username.length;
       }
-    })
-    .catch((e) => {
-      logger.error(e);
-    })
-    .then((res) => {
-      logger.info(res);
-    });
-  let leaderboardSorted = [];
-  let longestname = 0;
-  for (const [key, value] of Object.entries(leaderboard)) {
-    const user = await interaction.client.users.fetch(key);
-    if (user.username.length > longestname) {
-      longestname = user.username.length;
+      leaderboardSorted.push({
+        userid: user.id,
+        username: user.username,
+        //@ts-ignore
+        score: value,
+      });
     }
-    leaderboardSorted.push({
-      userid: user.id,
-      username: user.username,
-      score: value,
-    });
+    // i cba
+    //@ts-ignore
+    leaderboardSorted.sort((a, b) => b.score - a.score);
   }
-  // i cba
-  //@ts-ignore
-  leaderboardSorted.sort((a, b) => b.score - a.score);
 
-  const canvas = createCanvas(400, 500);
+  logger.info(leaderboardSorted)
+
+  const canvas = createCanvas(400, 600);
   const ctx = canvas.getContext("2d");
-  let offset = 100;
+  let offset = 120;
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.font = "40px Roboto";
+  ctx.font = "40px Minecraft";
   ctx.fillStyle = "#000000";
-  ctx.fillText(serverData.leaderboard, 0, 50);
+  ctx.fillText(serverData.leaderboard, 15, 70);
 
   const users = await interaction.guild?.members.fetch({
     user: leaderboardSorted.map((leaderboardItem) => leaderboardItem.userid),
@@ -119,12 +122,16 @@ export async function execute(interaction: CommandInteraction) {
   for (var leaderboardItem of leaderboardSorted) {
     const user = users.find((user) => user.id === leaderboardItem.userid);
     if (user === undefined) continue;
+    logger.info(leaderboardItem)
+    logger.info(leaderboardItem.score)
+    logger.info(leaderboardItem.username)
 
     const avatarImg = await loadImage(
       user.displayAvatarURL({ extension: "jpg" })
     );
+    ctx.font = "30px Minecraft";
     ctx.fillText(`${counter}.`, 5, offset);
-    ctx.drawImage(avatarImg, 45, offset - 45, 50, 50);
+    ctx.drawImage(avatarImg, 45, offset - 60, 50, 50);
     ctx.fillText(leaderboardItem.username, 100, offset);
     ctx.fillText(leaderboardItem.score as string, 350, offset);
     offset += 55;

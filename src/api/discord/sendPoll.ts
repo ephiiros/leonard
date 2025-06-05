@@ -21,6 +21,7 @@ export async function sendPoll(channel: TextChannel, gameData: MatchData) {
   const activePolls = serverData.messageIDList.map(
     (item: messageData) => item.MatchData.MatchId
   );
+  logger.info(`active polls ${activePolls}`)
   if (activePolls.includes(gameData.MatchId)) return;
 
   // getting poll delay
