@@ -15,5 +15,13 @@ export async function getSuperuser() {
     authpb = pb;
   }
   logger.info(authpb.authStore.isValid)
+  if (authpb.authStore.isValid === false) {
+    logger.info("updating auth")
+    authpb
+      .collection("_superusers")
+      .authWithPassword(config.DB_USER, config.DB_PASSWORD);
+
+    logger.info("updated auth " + authpb.authStore.isValid)
+  } 
   return authpb;
 }
