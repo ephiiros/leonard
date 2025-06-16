@@ -33,8 +33,8 @@ export default async function cronFunction(
         if (lolFandomData.Winner === null) return;
 
         addPoints(lolFandomData, message.poll);
+        channel.send(`Points added for ${item.MatchData.MatchId}`)
 
-        // removeActiveMessage(pollData)
         const filteredData = serverDataCron.messageIDList.filter(
           (messageItem: messageData) => messageItem.MatchData.MatchId !== lolFandomData.MatchId
         );
