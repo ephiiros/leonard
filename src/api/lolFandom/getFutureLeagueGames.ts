@@ -3,7 +3,7 @@ import { lolFandomResponse } from "../../types/lolFandomTypes";
 const baseUrl: string = "https://lol.fandom.com/api.php?";
 
 export async function getFutureLeagueGames(league: string) {
-  let leagueQuery = ` AND (MS.MatchId LIKE '${league}/%'` + ")";
+  let leagueQuery = ` AND (MS.MatchId LIKE '${league}%'` + ")";
   const now = DateTime.utc();
   const twentyDays = now.plus({ days: 20 });
   const params = new URLSearchParams({
