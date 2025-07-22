@@ -28,7 +28,7 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
       logger.warn(`attempt to create failed, fetching ${e}`);
       return await pb
         .collection("matches")
-        .getFirstListItem(`MatchId="${matchData.MatchId}"`);
+        .getFirstListItem(`MatchId="${matchData.MatchId}"`)
     });
 
   pollData.answers.each(async (pollItem, id) => {
@@ -43,7 +43,7 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
           username: voterUser.username,
         })
         .catch((e) => {
-          logger.warn(`failed to create user ${e}`);
+          logger.warn(`failed to create user ${voterUser.id} ${e}`);
         });
       // user guaranteed in server
 
@@ -51,7 +51,8 @@ export async function addPoints(matchData: MatchData, pollData: Poll) {
       await pb
         .collection(`User${voterUser.id}`)
         .getList(1, 1)
-        .catch(async () => {
+        .catch(async (e) => {
+          logger.warn(`failed to fetch ${voterUser.id} ${e}`);
           await pb.collections.create({
             name: `User${voterUser.id}`,
             type: "base",
